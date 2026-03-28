@@ -1,0 +1,2101 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#2c3e50">
+<link rel="manifest" href="manifest.json">
+<title>術前全身状態評価（医療者用）</title>
+<style>
+:root {
+  --primary: #2c3e50;
+  --primary-accent: #3498db;
+  --success: #27ae60;
+  --warning: #f39c12;
+  --danger: #e74c3c;
+  --bg: #f5f6fa;
+  --card: #ffffff;
+  --text: #2c3e50;
+  --text-light: #7f8c8d;
+  --border: #dcdfe3;
+  --sidebar-w: 230px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* サイドバー */
+.sidebar {
+  position: fixed;
+  top: 0; left: 0;
+  width: var(--sidebar-w);
+  height: 100vh;
+  background: var(--primary);
+  color: #ecf0f1;
+  overflow-y: auto;
+  z-index: 200;
+}
+.sidebar-title {
+  padding: 18px 16px 10px;
+  font-size: 14px;
+  font-weight: 700;
+  border-bottom: 1px solid #3d566e;
+  text-align: center;
+}
+.sidebar-nav { list-style: none; padding: 6px 0; }
+.sidebar-nav li {
+  padding: 9px 16px;
+  font-size: 12.5px;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: all 0.2s;
+}
+.sidebar-nav li:hover { background: #34495e; }
+.sidebar-nav li.active {
+  background: var(--primary-accent);
+  border-left-color: #fff;
+  font-weight: 700;
+}
+.sidebar-nav li.done {
+  color: #82e0aa;
+}
+.sidebar-nav li.done::before { content: "✓ "; }
+
+/* メイン */
+.main {
+  margin-left: var(--sidebar-w);
+  min-height: 100vh;
+  padding-bottom: 80px;
+}
+
+/* ヘッダー */
+.top-bar {
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  padding: 14px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.top-bar h1 { font-size: 16px; color: var(--primary); }
+.patient-badge {
+  background: var(--primary-accent);
+  color: #fff;
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+}
+
+/* コンテンツ */
+.content { padding: 20px 28px; max-width: 900px; }
+.step { display: none; }
+.step.active { display: block; }
+
+/* セクションヘッダー */
+.section-hd {
+  background: var(--primary-accent);
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 8px 8px 0 0;
+  font-size: 15px;
+  font-weight: 700;
+  margin-top: 18px;
+}
+.section-desc {
+  background: #eaf2f8;
+  padding: 10px 18px;
+  font-size: 12.5px;
+  color: #555;
+  border-radius: 0 0 8px 8px;
+  margin-bottom: 12px;
+}
+
+/* カード */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 12px;
+}
+
+/* 質問 */
+.q-label { font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+
+/* ラジオ */
+.radio-group { display: flex; flex-direction: column; gap: 4px; }
+.radio-opt {
+  display: flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.15s;
+}
+.radio-opt:hover { background: #f0f4f8; }
+.radio-opt.selected { background: #d6eaf8; }
+.radio-opt input { margin-right: 8px; accent-color: var(--primary-accent); }
+
+/* チェックボックス */
+.check-opt {
+  display: flex;
+  align-items: center;
+  padding: 6px 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.check-opt input { margin-right: 8px; width: 16px; height: 16px; accent-color: var(--primary-accent); }
+
+/* 入力フィールド */
+.field-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.field-row label {
+  width: 140px;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: right;
+  padding-right: 10px;
+  flex-shrink: 0;
+}
+.field-row input, .field-row select {
+  padding: 7px 10px;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  width: 260px;
+  outline: none;
+}
+.field-row input:focus, .field-row select:focus { border-color: var(--primary-accent); }
+
+/* スコア表示 */
+.score-box {
+  background: #eaf2f8;
+  border: 1px solid #b8d4e8;
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin: 12px 0;
+}
+.score-val { font-size: 18px; font-weight: 700; color: var(--primary-accent); }
+.score-judge { font-size: 14px; font-weight: 600; margin-top: 4px; }
+
+.judge-normal { color: var(--success); }
+.judge-warning { color: var(--warning); }
+.judge-danger { color: var(--danger); }
+
+/* 患者データ取得バッジ */
+.patient-data-badge {
+  display: inline-block;
+  background: #d5f5e3;
+  color: #1e8449;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-left: 8px;
+}
+.nurse-data-badge {
+  display: inline-block;
+  background: #d6eaf8;
+  color: #1a5276;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-left: 8px;
+}
+
+/* サマリーテーブル */
+.summary-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.summary-table th {
+  background: #d5e8f0;
+  padding: 8px 10px;
+  text-align: left;
+  font-weight: 600;
+}
+.summary-table td { padding: 7px 10px; border-bottom: 1px solid #eee; }
+
+/* ボタン */
+.btn {
+  padding: 10px 22px;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-sm { padding: 6px 14px; font-size: 12px; }
+.btn-primary { background: var(--primary-accent); color: #fff; }
+.btn-primary:hover { background: #2980b9; }
+.btn-success { background: var(--success); color: #fff; }
+.btn-success:hover { background: #229954; }
+.btn-secondary { background: #bdc3c7; color: #fff; }
+.btn-secondary:hover { background: #95a5a6; }
+.btn-calc { background: #8e44ad; color: #fff; }
+.btn-calc:hover { background: #7d3c98; }
+
+.nav-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+textarea {
+  width: 100%;
+  padding: 10px;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+/* ===== Mini-Cog 専用スタイル ===== */
+.mc-sub { display: none; }
+.mc-sub.mc-active { display: block; }
+
+.role-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 16px;
+  border-radius: 8px;
+  margin-bottom: 14px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.role-banner .role-icon { font-size: 22px; flex-shrink: 0; }
+.role-banner .role-sub { font-size: 11px; font-weight: 400; margin-top: 2px; opacity: 0.85; }
+.role-nurse { background: #eaf2fb; border: 2px solid #5b9bd5; color: #1a5276; }
+.role-patient { background: #fef5e7; border: 2px solid #f5b041; color: #7e5109; }
+.role-both { background: #eafaf1; border: 2px solid #58d68d; color: #1e8449; }
+
+.handoff-notice {
+  text-align: center;
+  background: linear-gradient(135deg, #f39c12, #e67e22);
+  color: #fff;
+  padding: 16px;
+  border-radius: 10px;
+  margin-bottom: 14px;
+}
+.handoff-notice .handoff-title { font-size: 16px; font-weight: 700; }
+.handoff-notice .handoff-desc { font-size: 12px; opacity: 0.9; margin-top: 3px; }
+
+.takeback-notice {
+  text-align: center;
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  color: #fff;
+  padding: 16px;
+  border-radius: 10px;
+  margin-bottom: 14px;
+}
+.takeback-notice .handoff-title { font-size: 16px; font-weight: 700; }
+.takeback-notice .handoff-desc { font-size: 12px; opacity: 0.9; margin-top: 3px; }
+
+.mc-word-display {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 16px 0;
+}
+.mc-word-chip {
+  background: var(--primary-accent);
+  color: #fff;
+  font-size: 20px;
+  font-weight: 700;
+  padding: 12px 24px;
+  border-radius: 14px;
+  box-shadow: 0 3px 10px rgba(52,152,219,0.3);
+}
+
+.mc-instruction {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.mc-instruction strong { color: #856404; }
+
+.mc-canvas-wrap { text-align: center; margin: 12px 0; }
+.mc-canvas-wrap canvas {
+  border: 3px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  touch-action: none;
+  cursor: crosshair;
+}
+.mc-canvas-controls {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+.mc-pen-sizes {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 6px 0;
+}
+.mc-pen-btn {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: #fff;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.mc-pen-btn.active { border-color: var(--primary-accent); background: #eaf2f8; }
+.mc-pen-dot { border-radius: 50%; background: #333; }
+
+.mc-timer-badge {
+  display: inline-block;
+  background: #fff3cd;
+  color: #856404;
+  font-size: 15px;
+  font-weight: 700;
+  padding: 6px 18px;
+  border-radius: 18px;
+  margin: 8px 0;
+}
+
+.mc-sub-nav {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.mc-progress {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-light);
+  margin-bottom: 12px;
+}
+
+.mc-cdt-guide {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin: 10px 0;
+}
+.mc-cdt-item {
+  background: #f8f9fa;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 12px;
+}
+.mc-cdt-item .chk { color: var(--success); font-weight: 700; }
+
+.mc-score-big {
+  font-size: 56px;
+  font-weight: 800;
+  text-align: center;
+  line-height: 1;
+}
+.mc-score-label {
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-light);
+  margin-top: 2px;
+}
+.mc-score-breakdown {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin: 14px 0;
+}
+.mc-score-item { text-align: center; }
+.mc-score-item .num { font-size: 24px; font-weight: 700; }
+.mc-score-item .lbl { font-size: 11px; color: var(--text-light); }
+
+.mc-judge-badge {
+  display: inline-block;
+  padding: 8px 20px;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+}
+.mc-judge-ok { background: var(--success); }
+.mc-judge-ng { background: var(--danger); }
+
+.mc-clock-thumb { margin: 12px auto; max-width: 220px; }
+.mc-clock-thumb img { width: 100%; border-radius: 10px; border: 2px solid var(--border); }
+
+.mc-radio-group { display: flex; flex-direction: column; gap: 5px; }
+.mc-radio-opt {
+  display: flex;
+  align-items: center;
+  background: #eaf2f8;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+.mc-radio-opt:hover { border-color: var(--primary-accent); }
+.mc-radio-opt.selected { border-color: var(--primary-accent); background: #d6eaf8; }
+.mc-radio-opt input[type="radio"] { width: 18px; height: 18px; margin-right: 10px; accent-color: var(--primary-accent); }
+
+.mc-wl-radio { display: flex; flex-direction: column; gap: 4px; }
+.mc-wl-opt {
+  display: flex; align-items: center;
+  padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px;
+  border: 2px solid transparent; transition: all 0.15s;
+}
+.mc-wl-opt:hover { background: #f0f4f8; }
+.mc-wl-opt.selected { border-color: var(--primary-accent); background: #d6eaf8; }
+.mc-wl-opt input { margin-right: 8px; accent-color: var(--primary-accent); }
+
+/* タッチ操作最適化 */
+input, select, textarea, button { font-size: 16px; }
+textarea { width: 100%; border: 1px solid var(--border); border-radius: 6px; padding: 10px; font-size: 14px; font-family: inherit; }
+
+/* === タブレット最適化 === */
+@media (max-width: 1024px) {
+  :root { --sidebar-w: 200px; }
+  .sidebar-nav li { padding: 12px 16px; font-size: 13px; min-height: 44px; display: flex; align-items: center; }
+  .content { padding: 16px 20px; }
+  .radio-opt { padding: 10px 12px; font-size: 14px; min-height: 44px; }
+  .check-opt { padding: 10px 12px; font-size: 14px; min-height: 44px; }
+  .check-opt input { width: 20px; height: 20px; }
+  .radio-opt input { width: 18px; height: 18px; }
+  .q-label { font-size: 14px; }
+  .field-row input, .field-row select { font-size: 16px; padding: 10px 12px; }
+  .field-row label { font-size: 14px; }
+  .btn { min-height: 48px; font-size: 15px; }
+  .section-hd { font-size: 16px; padding: 12px 18px; }
+}
+@media (max-width: 768px) {
+  :root { --sidebar-w: 0px; }
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    width: 240px;
+  }
+  .sidebar.open { transform: translateX(0); }
+  .main { margin-left: 0; }
+  .top-bar { padding: 10px 16px; }
+  .content { padding: 12px 16px; }
+  .field-row { flex-direction: column; align-items: flex-start; }
+  .field-row label { width: auto; text-align: left; padding-right: 0; margin-bottom: 4px; }
+  .field-row input, .field-row select { width: 100%; }
+  .menu-toggle { display: block !important; }
+}
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 199;
+}
+.sidebar.open + .sidebar-backdrop,
+.sidebar.open ~ .sidebar-backdrop { display: block; }
+</style>
+</head>
+<body>
+
+<!-- サイドバー -->
+<div class="sidebar">
+  <div class="sidebar-title">術前全身状態評価</div>
+  <ul class="sidebar-nav" id="sidebarNav"></ul>
+</div>
+
+<!-- メイン -->
+<div class="main">
+  <div class="top-bar">
+    <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')" style="display:none; background:none; border:none; font-size:24px; cursor:pointer; padding:4px 8px; color:var(--primary);">&#9776;</button>
+    <h1>医療者用 評価入力</h1>
+    <div>
+      <span class="patient-badge" id="topPatientId">患者未選択</span>
+    </div>
+  </div>
+  <div class="content" id="content"></div>
+</div>
+
+<script>
+// =========================================================================
+// ステップ定義
+// =========================================================================
+const STEPS = [
+  { id: 'info',    name: '1. 患者基本情報' },
+  { id: 'g8',      name: '2. G8' },
+  { id: 'cfs',     name: '3. CFS' },
+  { id: 'fried',   name: '4. 改訂J-CHS' },
+  { id: 'minicog', name: '5. Mini-Cog' },
+  { id: 'iadl',    name: '6. Lawton IADL' },
+  { id: 'mfi5',    name: '7. mFI-5' },
+  { id: 'extra',   name: '8. 追加評価' },
+  { id: 'summary', name: '9. 結果サマリー' },
+];
+
+let currentStep = 0;
+let completedSteps = new Set();
+let staffData = {};     // 医療者入力データ
+let patientData = null; // 患者入力データ（localStorageから読み込み）
+let nurseData = null;   // 看護師入力データ（localStorageから読み込み）
+
+// =========================================================================
+// サイドバー
+// =========================================================================
+function buildSidebar() {
+  const nav = document.getElementById('sidebarNav');
+  nav.innerHTML = STEPS.map((s, i) =>
+    `<li data-idx="${i}" onclick="goStep(${i})">${s.name}</li>`
+  ).join('');
+  updateSidebar();
+}
+
+function updateSidebar() {
+  document.querySelectorAll('.sidebar-nav li').forEach((li, i) => {
+    li.classList.toggle('active', i === currentStep);
+    li.classList.toggle('done', completedSteps.has(i));
+  });
+}
+
+// =========================================================================
+// ステップ切り替え
+// =========================================================================
+function goStep(n) {
+  saveCurrentStep();
+  currentStep = n;
+  renderStep();
+  updateSidebar();
+  window.scrollTo({top: 0});
+}
+
+function nextStep() {
+  saveCurrentStep();
+  completedSteps.add(currentStep);
+  if (currentStep < STEPS.length - 1) {
+    currentStep++;
+    renderStep();
+    updateSidebar();
+    window.scrollTo({top: 0});
+  } else {
+    exportCSV();
+  }
+}
+
+function prevStep() {
+  saveCurrentStep();
+  if (currentStep > 0) { currentStep--; renderStep(); updateSidebar(); window.scrollTo({top: 0}); }
+}
+
+// =========================================================================
+// データ保存・読み込み
+// =========================================================================
+function saveCurrentStep() {
+  // ラジオ
+  document.querySelectorAll('.radio-group[data-key]').forEach(g => {
+    const c = g.querySelector('input:checked');
+    if (c) staffData[g.dataset.key] = c.value;
+  });
+  // チェックボックス
+  document.querySelectorAll('.check-opt input[type="checkbox"]').forEach(cb => {
+    staffData[cb.dataset.key] = cb.checked ? 1 : 0;
+  });
+  // テキスト入力（チェックボックスは除外）
+  document.querySelectorAll('input[data-key]:not([type="checkbox"])').forEach(inp => {
+    staffData[inp.dataset.key] = inp.value;
+  });
+  document.querySelectorAll('select[data-key]').forEach(sel => {
+    staffData[sel.dataset.key] = sel.value;
+  });
+  // テキストエリア
+  document.querySelectorAll('textarea[data-key]').forEach(ta => {
+    staffData[ta.dataset.key] = ta.value;
+  });
+}
+
+function loadPatientData(pid) {
+  const key = 'assessment_patient_' + pid;
+  const raw = localStorage.getItem(key);
+  if (raw) {
+    patientData = JSON.parse(raw);
+    return true;
+  }
+  patientData = null;
+  return false;
+}
+
+function loadNurseData(pid) {
+  const key = 'assessment_nurse_' + pid;
+  const raw = localStorage.getItem(key);
+  if (raw) {
+    nurseData = JSON.parse(raw);
+    return true;
+  }
+  nurseData = null;
+  return false;
+}
+
+function getVal(key, fallback) {
+  if (staffData[key] !== undefined && staffData[key] !== '') return staffData[key];
+  if (nurseData && nurseData[key] !== undefined && nurseData[key] !== '') return nurseData[key];
+  if (patientData && patientData[key] !== undefined && patientData[key] !== '') return patientData[key];
+  return fallback !== undefined ? fallback : '';
+}
+
+function isPatientVal(key) {
+  return patientData && patientData[key] !== undefined && patientData[key] !== ''
+    && (staffData[key] === undefined || staffData[key] === '')
+    && (!nurseData || nurseData[key] === undefined || nurseData[key] === '');
+}
+
+function isNurseVal(key) {
+  return nurseData && nurseData[key] !== undefined && nurseData[key] !== ''
+    && (staffData[key] === undefined || staffData[key] === '');
+}
+
+// =========================================================================
+// HTML生成ヘルパー
+// =========================================================================
+function h_section(title, desc) {
+  return `<div class="section-hd">${title}</div>` +
+    (desc ? `<div class="section-desc">${desc}</div>` : '');
+}
+
+function dataBadge(key) {
+  if (isNurseVal(key)) return '<span class="nurse-data-badge">看護師入力</span>';
+  if (isPatientVal(key)) return '<span class="patient-data-badge">患者入力</span>';
+  return '';
+}
+
+function h_field(key, label, opts) {
+  opts = opts || {};
+  const val = getVal(key, opts.def || '');
+  const badge = dataBadge(key);
+  const type = opts.type || 'text';
+  const w = opts.width || '260px';
+  return `<div class="field-row">
+    <label>${label}${badge}</label>
+    <input type="${type}" data-key="${key}" value="${val}" style="width:${w}" ${opts.placeholder ? 'placeholder="'+opts.placeholder+'"' : ''}>
+  </div>`;
+}
+
+function h_radio(key, label, options) {
+  const curVal = getVal(key);
+  const badge = dataBadge(key);
+  let html = `<div class="card"><div class="q-label">${label}${badge}</div><div class="radio-group" data-key="${key}">`;
+  for (const [text, val] of options) {
+    const checked = String(curVal) === String(val) ? 'checked' : '';
+    const sel = checked ? 'selected' : '';
+    html += `<label class="radio-opt ${sel}"><input type="radio" name="${key}" value="${val}" ${checked}>${text}</label>`;
+  }
+  html += '</div></div>';
+  return html;
+}
+
+function h_check(key, text) {
+  const checked = getVal(key) == 1 ? 'checked' : '';
+  return `<label class="check-opt"><input type="checkbox" data-key="${key}" ${checked}>${text}</label>`;
+}
+
+function h_score(id) {
+  return `<div class="score-box" id="score_${id}">
+    <div class="score-val" id="scoreVal_${id}">スコア: 未計算</div>
+    <div class="score-judge" id="scoreJudge_${id}"></div>
+    <button class="btn btn-calc btn-sm" onclick="calcScore('${id}')" style="margin-top:8px;">スコア計算</button>
+  </div>`;
+}
+
+function h_nav() {
+  const isLast = currentStep === STEPS.length - 1;
+  return `<div class="nav-bar">
+    <button class="btn btn-secondary" onclick="prevStep()" ${currentStep === 0 ? 'disabled' : ''}>◀ 前へ</button>
+    <span style="font-size:12px; color:var(--text-light);">${currentStep + 1} / ${STEPS.length}</span>
+    <button class="btn ${isLast ? 'btn-success' : 'btn-primary'}" onclick="nextStep()">${isLast ? 'CSV出力' : '次へ ▶'}</button>
+  </div>`;
+}
+
+// =========================================================================
+// 各ステップのレンダリング
+// =========================================================================
+function renderStep() {
+  const el = document.getElementById('content');
+  const renderers = [
+    renderInfo, renderG8, renderCFS, renderFried,
+    renderMiniCog, renderIADL, renderMFI5, renderExtra, renderSummary
+  ];
+  el.innerHTML = renderers[currentStep]() + h_nav();
+
+  // ラジオのスタイル
+  el.querySelectorAll('.radio-group input').forEach(r => {
+    r.addEventListener('change', function() {
+      this.closest('.radio-group').querySelectorAll('.radio-opt').forEach(o => o.classList.remove('selected'));
+      this.closest('.radio-opt').classList.add('selected');
+    });
+  });
+
+}
+
+// ---- Step 0: 基本情報 ----
+function renderInfo() {
+  let html = h_section('患者基本情報', '患者IDを入力すると、患者様・看護師の入力データがあれば自動で読み込みます。');
+  html += '<div class="card">';
+  html += `<div class="field-row">
+    <label>患者ID:</label>
+    <div style="display:flex; align-items:center; gap:4px;">
+      <span style="font-size:15px; font-weight:700; color:var(--primary);">10</span>
+      <input type="text" data-key="patient_id" value="${getVal('patient_id')}" style="width:200px; padding:7px 10px; font-size:13px; border:1px solid var(--border); border-radius:6px;" placeholder="例: 12345">
+    </div>
+  </div>`;
+  html += `<button class="btn btn-primary btn-sm" onclick="tryLoadPatient()" style="margin:6px 0 12px 150px;">患者・看護師データ読込</button>`;
+  html += `<div id="loadResult" style="margin:0 0 12px 150px; font-size:12px;"></div>`;
+  html += h_field('patient_name', '患者氏名:', {placeholder: 'イニシャルで記入（例: T.Y.）'});
+  html += h_field('patient_age', '年齢:', {type: 'number', width: '100px'});
+
+  const sexVal = getVal('patient_sex');
+  html += `<div class="field-row"><label>性別:</label>
+    <select data-key="patient_sex" style="width:120px;">
+      <option value="">選択</option>
+      <option value="M" ${sexVal==='M'?'selected':''}>男性</option>
+      <option value="F" ${sexVal==='F'?'selected':''}>女性</option>
+    </select></div>`;
+
+  html += h_field('patient_height', '身長 (cm):', {type: 'number', width: '120px'});
+  html += h_field('patient_weight', '現在の体重 (kg):', {type: 'number', width: '120px'});
+  html += `<div class="field-row"><label>BMI:</label>
+    <span id="bmiDisplay" style="font-weight:700; color:var(--primary-accent);">${getVal('patient_bmi', '―')}</span></div>`;
+  html += '</div>';
+
+  // 過去体重セクション
+  html += '<div class="section-hd" style="background:#8e44ad;">体重履歴（自動判定用）</div>';
+  html += '<div class="section-desc">現在の体重との差分から、G8・Fried等の体重変化項目を自動判定します。</div>';
+  html += '<div class="card">';
+  html += h_field('weight_3m', '3ヶ月前の体重 (kg):', {type: 'number', width: '120px'});
+  html += h_field('weight_6m', '半年前の体重 (kg):', {type: 'number', width: '120px'});
+  html += h_field('weight_1y', '1年前の体重 (kg):', {type: 'number', width: '120px'});
+  html += `<div id="weightCalcResult" style="margin-top:10px; font-size:12px; color:var(--text-light);"></div>`;
+  html += `<button class="btn btn-calc btn-sm" onclick="calcWeightAndBMI()" style="margin-top:10px;">体重変化 & BMI を自動計算して各項目に反映</button>`;
+  html += `<div id="autoFillResult" style="margin-top:8px; font-size:12px;"></div>`;
+  html += '</div>';
+
+  html += h_field('assessment_date', '評価日:', {def: new Date().toISOString().slice(0,10)});
+
+  html += h_radio('cga_social', '社会的支援', [
+    ['十分（同居家族あり）', '十分'],
+    ['部分的（独居・近隣に支援者）', '部分的'],
+    ['不十分（独居・支援なし）', '不十分']
+  ]);
+
+  return html;
+}
+
+// ---- Step 1: G8 ----
+function renderG8() {
+  let html = h_section('G8スクリーニング（Geriatric-8）', '17点満点。14点以下で「脆弱（異常）」→ 詳細CGAが必要。');
+  html += h_radio('g8_a', 'A. 過去3ヶ月間の食事摂取量の変化', [
+    ['著しい減少 (0)', 0], ['中等度の減少 (1)', 1], ['減少なし (2)', 2]
+  ]);
+  const w3mNote = staffData.g8_b !== undefined ? ' <span style="color:#8e44ad; font-size:11px;">← 体重履歴から自動反映済</span>' : '';
+  html += h_radio('g8_b', 'B. 過去3ヶ月間の体重変化' + w3mNote, [
+    ['3kg以上の減少 (0)', 0], ['わからない (1)', 1], ['1-3kgの減少 (2)', 2], ['減少なし (3)', 3]
+  ]);
+  html += h_radio('g8_c', 'C. 可動性（Mobility）', [
+    ['寝たきり/車椅子 (0)', 0], ['離床可・外出不可 (1)', 1], ['外出可能 (2)', 2]
+  ]);
+  html += h_radio('g8_e', 'E. 神経・精神的問題', [
+    ['重度認知症/うつ (0)', 0], ['中等度認知障害 (1)', 1], ['問題なし (2)', 2]
+  ]);
+  const bmiNote = staffData.g8_f !== undefined ? ` <span style="color:#8e44ad; font-size:11px;">← BMI ${getVal('patient_bmi','?')} から自動反映済</span>` : '';
+  html += h_radio('g8_f', 'F. BMI' + bmiNote, [
+    ['19未満 (0)', 0], ['19-21 (1)', 1], ['21-23 (2)', 2], ['23以上 (3)', 3]
+  ]);
+  html += h_radio('g8_h', 'H. 1日4種類以上の処方薬', [
+    ['はい (0)', 0], ['いいえ (1)', 1]
+  ]);
+  html += h_radio('g8_p', 'P. 同年齢と比較した自己健康評価', [
+    ['良くない (0)', 0], ['わからない (0.5)', 0.5], ['同等 (1)', 1], ['良い (2)', 2]
+  ]);
+  // 年齢自動判定
+  const age = parseInt(getVal('patient_age', 0));
+  if (age > 0) {
+    let g8age;
+    if (age >= 86) g8age = 0;
+    else if (age >= 80) g8age = 1;
+    else g8age = 2;
+    staffData.g8_age = g8age;
+  }
+  const ageNote = age > 0 ? ` <span style="color:#8e44ad; font-size:11px;">← ${age}歳 → 自動選択</span>` : '';
+  html += h_radio('g8_age', '年齢区分' + ageNote, [
+    ['86歳以上 (0)', 0], ['80-85歳 (1)', 1], ['80歳未満 (2)', 2]
+  ]);
+  html += h_score('g8');
+  return html;
+}
+
+// ---- Step 2: CFS ----
+function renderCFS() {
+  let html = h_section('Clinical Frailty Scale (CFS)', '2週間前のベースラインの状態で評価。5点以上がフレイル。');
+  html += h_radio('cfs_score', '2週間前のベースラインの状態を選択', [
+    ['1: Very Fit - 非常に活動的、定期的運動', 1],
+    ['2: Well - 活動的だが定期的運動なし', 2],
+    ['3: Managing Well - 疾患コントロール良好、活動制限なし', 3],
+    ['4: Vulnerable - 動作が遅い、依存なし', 4],
+    ['5: Mildly Frail - IADL一部に介助必要', 5],
+    ['6: Moderately Frail - 入浴・屋外・階段に介助必要', 6],
+    ['7: Severely Frail - ADL全面介助', 7],
+    ['8: Very Severely Frail - 完全依存', 8],
+    ['9: Terminally Ill - 余命6ヶ月未満', 9],
+  ]);
+  html += h_score('cfs');
+  return html;
+}
+
+// ---- Step 3: Fried ----
+function renderFried() {
+  let html = h_section('改訂J-CHS基準（身体的フレイル）',
+    'Satake S & Arai H, 2020 に準拠。5項目中3つ以上でフレイル、1-2でプレフレイル、0で健常。');
+
+  // 1. 体重減少（半年前体重から自動判定）
+  const w6m = parseFloat(getVal('weight_6m', 0));
+  const wNow = parseFloat(getVal('patient_weight', 0));
+  let wtAutoMsg = '';
+  if (w6m > 0 && wNow > 0) {
+    const diff6m = w6m - wNow;
+    const friedWtAuto = diff6m >= 2 ? 1 : 0;
+    staffData.fried_wt = friedWtAuto;
+    wtAutoMsg = ` <span style="color:#8e44ad; font-size:11px;">← 自動判定: ${diff6m >= 0 ? '-' : '+'}${Math.abs(diff6m).toFixed(1)}kg（${friedWtAuto ? '該当' : '非該当'}）</span>`;
+  }
+  html += h_radio('fried_wt', '1. 体重減少' + wtAutoMsg, [
+    ['該当しない：6ヶ月間で2kg以上の意図しない体重減少なし (0)', 0],
+    ['該当する：6ヶ月間で2kg以上の意図しない体重減少あり (1)', 1]
+  ]);
+
+  // 2. 筋力低下（握力：右・左入力 → 性別で自動判定）
+  const sex = getVal('patient_sex');
+  const gripR = parseFloat(getVal('fried_grip_r', 0));
+  const gripL = parseFloat(getVal('fried_grip_l', 0));
+  const gripMax = Math.max(gripR, gripL);
+  let gripAutoMsg = '';
+  if (gripMax > 0 && sex) {
+    const threshold = sex === 'M' ? 28 : 18;
+    const gripResult = gripMax < threshold ? 1 : 0;
+    staffData.fried_grip = gripResult;
+    gripAutoMsg = ` <span style="color:#8e44ad; font-size:11px;">← 自動判定: 最大${gripMax}kg（${sex === 'M' ? '男性' : '女性'}基準${threshold}kg ${gripResult ? '未満→該当' : '以上→非該当'}）</span>`;
+  }
+  html += `<div class="card"><div class="q-label">2. 筋力低下（握力）${gripAutoMsg}</div>
+    <div class="field-row" style="margin-top:8px;">
+      <label>右手握力 (kg):</label>
+      <input type="number" data-key="fried_grip_r" value="${getVal('fried_grip_r')}" style="width:100px; padding:7px 10px; font-size:13px; border:1px solid var(--border); border-radius:6px;" step="0.1">
+    </div>
+    <div class="field-row">
+      <label>左手握力 (kg):</label>
+      <input type="number" data-key="fried_grip_l" value="${getVal('fried_grip_l')}" style="width:100px; padding:7px 10px; font-size:13px; border:1px solid var(--border); border-radius:6px;" step="0.1">
+    </div>
+    <div style="margin:6px 0 0 150px; font-size:11px; color:#7d3c98;">基準：男性 28kg未満、女性 18kg未満で該当（最大値で判定）</div>
+    <div class="radio-group" data-key="fried_grip" style="margin-top:8px;">
+      <label class="radio-opt ${String(getVal('fried_grip'))==='0'?'selected':''}"><input type="radio" name="fried_grip" value="0" ${String(getVal('fried_grip'))==='0'?'checked':''}>該当しない (0)</label>
+      <label class="radio-opt ${String(getVal('fried_grip'))==='1'?'selected':''}"><input type="radio" name="fried_grip" value="1" ${String(getVal('fried_grip'))==='1'?'checked':''}>該当する (1)</label>
+    </div>
+  </div>`;
+
+  // 3. 疲労感
+  html += h_radio('fried_exhaust', '3. 疲労感', [
+    ['該当しない：「わけもなく疲れたような感じがする」に「いいえ」 (0)', 0],
+    ['該当する：「（ここ2週間）わけもなく疲れたような感じがする」に「はい」 (1)', 1]
+  ]);
+
+  // 4. 歩行速度
+  html += `<div class="card"><div class="q-label">4. 通常歩行速度</div>
+    <div class="field-row" style="margin-top:8px;">
+      <label>歩行速度 (m/秒):</label>
+      <input type="number" data-key="fried_walk_speed" value="${getVal('fried_walk_speed')}" style="width:120px; padding:7px 10px; font-size:13px; border:1px solid var(--border); border-radius:6px;" step="0.01" placeholder="例: 0.85">
+    </div>
+    <div style="margin:6px 0 0 150px; font-size:11px; color:#7d3c98;">基準：1.0 m/秒未満で該当</div>
+    <div class="radio-group" data-key="fried_walk" style="margin-top:8px;">
+      <label class="radio-opt ${String(getVal('fried_walk'))==='0'?'selected':''}"><input type="radio" name="fried_walk" value="0" ${String(getVal('fried_walk'))==='0'?'checked':''}>該当しない：1.0 m/秒以上 (0)</label>
+      <label class="radio-opt ${String(getVal('fried_walk'))==='1'?'selected':''}"><input type="radio" name="fried_walk" value="1" ${String(getVal('fried_walk'))==='1'?'checked':''}>該当する：1.0 m/秒未満 (1)</label>
+    </div>
+  </div>`;
+
+  // 5. 身体活動
+  // 身体活動の自動判定（患者アンケートから）
+  const q1 = getVal('fried_activity_q1');
+  const q2 = getVal('fried_activity_q2');
+  if (q1 !== '' && q2 !== '' && (staffData.fried_activity === undefined || staffData.fried_activity === '')) {
+    staffData.fried_activity = (parseInt(q1) === 1 && parseInt(q2) === 1) ? 1 : 0;
+  }
+  let actAutoMsg = '';
+  if (q1 !== '' && q2 !== '') {
+    const q1Label = parseInt(q1) === 1 ? 'していない' : 'している';
+    const q2Label = parseInt(q2) === 1 ? 'していない' : 'している';
+    actAutoMsg = ` <span style="color:#8e44ad; font-size:11px;">← 患者回答: 軽い運動=${q1Label}, 定期的運動=${q2Label} → 自動判定</span>`;
+  }
+  html += h_radio('fried_activity', '5. 身体活動' + actAutoMsg, [
+    ['該当しない：軽い運動・体操 or 定期的な運動・スポーツを週1回以上している (0)', 0],
+    ['該当する：「軽い運動・体操」「定期的な運動・スポーツ」いずれも週1回もしていない (1)', 1]
+  ]);
+
+  html += `<button class="btn btn-calc btn-sm" onclick="autoJudgeFried()" style="margin:12px 0;">握力・歩行速度・体重から自動判定を更新</button>`;
+  html += `<div id="friedAutoResult" style="font-size:12px; margin-bottom:8px;"></div>`;
+  html += h_score('fried');
+  return html;
+}
+
+// ---- Step 4: mFI-5 ----
+function renderMFI5() {
+  let html = h_section('改訂フレイル指数 mFI-5', '5項目の併存疾患。2項目以上でフレイル。');
+
+  // IADL判定結果から機能的自立を自動提示
+  const iadlScore = staffData._iadl_score;
+  let iadlHint = '';
+  if (iadlScore !== undefined) {
+    const funcDependent = iadlScore <= 5 ? 1 : 0;
+    iadlHint = funcDependent
+      ? `<span style="color:#e74c3c; font-size:12px;">（Lawton IADL ${iadlScore}/8 → 非自立の可能性あり）</span>`
+      : `<span style="color:#27ae60; font-size:12px;">（Lawton IADL ${iadlScore}/8 → 概ね自立）</span>`;
+  }
+
+  html += '<div class="card"><div class="q-label">該当項目にチェック</div>';
+  html += h_check('mfi5_chf', 'うっ血性心不全の既往');
+  html += h_check('mfi5_dm', '糖尿病（インスリン or 経口薬）');
+  html += h_check('mfi5_copd', 'COPD / 肺炎の既往');
+  html += h_check('mfi5_func', '機能的に非自立（部分的 or 完全依存）');
+  html += `<div style="margin:-2px 0 6px 34px; font-size:11px; color:#7d3c98;">※ Lawton IADLの判定結果に基づいて入力してください ${iadlHint}</div>`;
+  html += h_check('mfi5_htn', '高血圧（薬物療法を要する）');
+  html += '</div>';
+  html += h_score('mfi5');
+  return html;
+}
+
+// ---- Step 8: 追加評価（MNA-SF / GLIM / E-PASS / CGA の未収集項目のみ） ----
+function renderExtra() {
+  let html = h_section('追加評価（MNA-SF / GLIM / E-PASS / CGA）',
+    '前ステップで未収集の項目のみをまとめています。入力するとサマリーで各スコアが自動算出されます。未入力でもスキップ可能です。');
+
+  // ================================================================
+  // MNA-SF 追加分（D のみ。A,B,C,E,F は G8 から流用）
+  // ================================================================
+  html += '<div class="section-hd" style="background:#e67e22; margin-top:16px;">MNA-SF 追加項目</div>';
+  html += '<div class="section-desc">A(食事量)=G8 A, B(体重変化)=G8 B, C(可動性)=G8 C, E(神経精神)=G8 E, F(BMI)=G8 F から自動流用。以下のみ追加入力。</div>';
+  html += h_radio('mnasf_d', 'D. 過去3ヶ月以内に精神的ストレスや急性疾患を経験したか', [
+    ['あり (0)', 0], ['なし (2)', 2]
+  ]);
+
+  // ================================================================
+  // GLIM 追加分（体重減少=体重履歴、低BMI=BMI、食事摂取↓=G8 Aから流用）
+  // ================================================================
+  html += '<div class="section-hd" style="background:#c0392b; margin-top:16px;">GLIM基準 追加項目</div>';
+  html += '<div class="section-desc">体重減少・低BMI は体重履歴から自動判定。食事摂取低下は G8 A から流用。以下のみ追加入力。</div>';
+
+  html += `<div class="card"><div class="q-label">下腿周囲長（ふくらはぎ周囲長）</div>
+    <div class="field-row" style="margin-top:6px;">
+      <label>下腿周囲長 (cm):</label>
+      <input type="number" data-key="glim_calf" value="${getVal('glim_calf')}" style="width:120px; padding:7px 10px; font-size:13px; border:1px solid var(--border); border-radius:6px;" step="0.1" placeholder="例: 31.5">
+    </div>
+    <div style="margin:4px 0 0 150px; font-size:11px; color:#7d3c98;">基準：男性 &lt; 34cm、女性 &lt; 33cm で骨格筋量減少と判定</div>
+  </div>`;
+
+  html += h_radio('glim_inflammation', '疾患による炎症（病因基準）', [
+    ['なし (0)', 0],
+    ['あり：がん・慢性心不全・COPD・慢性腎臓病・慢性炎症性疾患など (1)', 1]
+  ]);
+
+  // ================================================================
+  // E-PASS 追加分（年齢=基本情報、糖尿病=mFI-5 DMから流用）
+  // ================================================================
+  html += '<div class="section-hd" style="background:#2c3e50; margin-top:16px;">E-PASS PRS 追加項目</div>';
+  html += '<div class="section-desc">年齢は基本情報、糖尿病は mFI-5 から自動流用。以下のみ追加入力。</div>';
+
+  html += h_radio('epass_heart', '重症心疾患（NYHA III度以上、等）', [
+    ['なし (0)', 0], ['あり (1)', 1]
+  ]);
+  html += h_radio('epass_lung', '重症肺疾患（%VC&lt;60%、FEV1.0%&lt;50%、等）', [
+    ['なし (0)', 0], ['あり (1)', 1]
+  ]);
+  html += h_radio('epass_ps', 'Performance Status（ECOG PS）', [
+    ['PS 0：無症状、通常活動に制限なし (0)', 0],
+    ['PS 1：軽度の症状あり、軽作業は可能 (1)', 1],
+    ['PS 2：日中の50%以上は起居、身の回りは自分で可能 (2)', 2],
+    ['PS 3：日中の50%以上は臥床、限られた身の回りのみ (3)', 3],
+    ['PS 4：完全に臥床 (4)', 4]
+  ]);
+  html += h_radio('epass_asa', 'ASA身体状態分類（ASA-PS）', [
+    ['ASA I：正常で健康 (1)', 1],
+    ['ASA II：軽度の全身疾患 (2)', 2],
+    ['ASA III：重度の全身疾患 (3)', 3],
+    ['ASA IV：生命を脅かす重度の全身疾患 (4)', 4],
+    ['ASA V：手術なしでは生存が期待できない (5)', 5]
+  ]);
+
+  // ================================================================
+  // CGA 追加分（併存疾患/ポリファーマシー。身体=IADL, 認知=Mini-Cog, 栄養=MNA-SF, 社会=基本情報から流用）
+  // ================================================================
+  html += '<div class="section-hd" style="background:#16a085; margin-top:16px;">CGA概要 追加項目</div>';
+  html += '<div class="section-desc">身体機能=IADL、認知=Mini-Cog、栄養=MNA-SF、社会的支援=基本情報から自動統合。以下のみ追加入力。</div>';
+
+  // 処方薬数の自動表示
+  const drugCount = getVal('g8_drug_count');
+  let drugNote = '';
+  if (drugCount !== '') {
+    const dc = parseInt(drugCount);
+    const polyPharm = dc >= 5;
+    drugNote = ` <span style="color:#8e44ad; font-size:11px;">← 処方薬数: ${dc}種類${polyPharm ? '（ポリファーマシー該当）' : ''}</span>`;
+    // ポリファーマシーに基づく自動選択（まだ未入力の場合のみ）
+    if (staffData.cga_comorbidity === undefined || staffData.cga_comorbidity === '') {
+      if (dc >= 5) staffData.cga_comorbidity = '中等度';
+    }
+  }
+
+  html += h_radio('cga_comorbidity', '併存疾患・ポリファーマシー' + drugNote, [
+    ['軽度（CCI 0-2、薬剤4種以下） (軽度)', '軽度'],
+    ['中等度（CCI 3-5 or 薬剤5種以上） (中等度)', '中等度'],
+    ['高度（CCI 6以上 + ポリファーマシー） (高度)', '高度']
+  ]);
+
+  html += `<div class="card"><div class="q-label">CGA 補足メモ</div>
+    <textarea data-key="cga_memo" rows="3" placeholder="自由記載">${getVal('cga_memo')}</textarea></div>`;
+
+  return html;
+}
+
+// ---- Step 5: Mini-Cog（フル版） ----
+const MC_WORD_LISTS = [
+  { id: 1, words: ['バナナ', '日の出', '椅子'] },
+  { id: 2, words: ['娘', '天気', '台所'] },
+  { id: 3, words: ['村', '台所', '赤ちゃん'] },
+  { id: 4, words: ['川', '国', '指'] },
+  { id: 5, words: ['リーダー', '季節', 'テーブル'] },
+  { id: 6, words: ['大将', '庭', '帽子'] },
+];
+const MC_TARGET_TIME = '11時10分';
+
+let mcSub = 0;
+let mcCanvas, mcCtx, mcDrawing = false, mcPenSize = 3;
+let mcStrokeHistory = [];
+let mcTimerInterval = null, mcTimerSec = 0;
+let mcClockImage = '';
+let mcSelectedList = -1;
+let mcWords = [];
+
+function renderMiniCog() {
+  let html = h_section('Mini-Cog（認知機能スクリーニング）', '遅延再生(0-3点) + 時計描画(0 or 2点) = 5点満点。2点以下で認知機能低下疑い。');
+
+  // 看護師データの表示
+  if (nurseData && nurseData._minicog_score !== undefined) {
+    const jClass = judgeCls(nurseData._minicog_judge);
+    html += '<div class="card" style="background:#d6eaf8; border-left:4px solid #1a5276;">';
+    html += '<div class="q-label" style="color:#1a5276;">看護師によるMini-Cog評価結果</div>';
+    html += `<table class="summary-table">
+      <tr><td>遅延再生（単語想起）</td><td><strong>${nurseData.minicog_recall ?? '-'}</strong> / 3語</td></tr>
+      <tr><td>時計描画テスト（CDT）</td><td><strong>${nurseData.minicog_clock ?? '-'}</strong> / 2点</td></tr>
+      <tr><td>合計スコア</td><td><strong>${nurseData._minicog_score}</strong> / 5点</td></tr>
+      <tr><td>判定</td><td class="${jClass}"><strong>${nurseData._minicog_judge}</strong></td></tr>
+    </table></div>`;
+
+    // 看護師のデータをstaffDataに反映
+    if (staffData.minicog_recall === undefined || staffData.minicog_recall === '') {
+      staffData.minicog_recall = nurseData.minicog_recall;
+    }
+    if (staffData.minicog_clock === undefined || staffData.minicog_clock === '') {
+      staffData.minicog_clock = nurseData.minicog_clock;
+    }
+  } else {
+    html += '<div class="card" style="background:#fdebd0; border-left:4px solid #f39c12;">';
+    html += '<div class="q-label" style="color:#e67e22;">看護師のMini-Cog評価データがありません</div>';
+    html += '<p style="font-size:12px; color:#555;">下記から手動入力するか、看護師用アプリで評価を完了してください。</p></div>';
+  }
+
+  html += '<div class="section-hd" style="background:#7f8c8d; margin-top:16px;">スコア入力（手動修正可）</div>';
+  html += h_radio('minicog_recall', '遅延再生（正しく想起できた単語数）', [
+    ['0語 (0)', 0], ['1語 (1)', 1], ['2語 (2)', 2], ['3語 (3)', 3]
+  ]);
+  html += h_radio('minicog_clock', '時計描画テスト（CDT）', [
+    ['正常 (2)', 2], ['異常 (0)', 0]
+  ]);
+  html += h_score('minicog');
+  return html;
+}
+
+// === Mini-Cog サブステップ管理 ===
+function mcGoSub(n) {
+  // タイマー管理
+  if (n === 2 && mcSub !== 2) mcStartTimer();
+  else if (mcSub === 2 && n !== 2) mcStopTimer();
+
+  document.querySelectorAll('.mc-sub').forEach(s => s.classList.remove('mc-active'));
+  const el = document.querySelector(`.mc-sub[data-mc="${n}"]`);
+  if (el) el.classList.add('mc-active');
+  mcSub = n;
+
+  if (n === 1) {
+    document.getElementById('mcWordDisplay1').innerHTML =
+      mcWords.map(w => `<span class="mc-word-chip">${w}</span>`).join('');
+  }
+  if (n === 2) {
+    // 時計描画画面に遷移時、キャンバスが未初期化なら初期化
+    if (!mcCanvas || !mcCanvas.getContext) mcInitCanvas();
+  }
+  if (n === 3) {
+    document.getElementById('mcWordDisplay3').innerHTML =
+      mcWords.map(w => `<span class="mc-word-chip">${w}</span>`).join('');
+  }
+  if (n === 4) {
+    document.getElementById('mcClockPreview').src = mcClockImage || (mcCanvas ? mcCanvas.toDataURL() : '');
+  }
+
+  window.scrollTo({top: document.querySelector('.section-hd').offsetTop - 60});
+}
+
+function mcPostRender() {
+  // ラジオスタイル
+  document.querySelectorAll('.mc-radio-group input, .mc-wl-radio input').forEach(r => {
+    r.addEventListener('change', function() {
+      const grp = this.closest('.mc-radio-group') || this.closest('.mc-wl-radio');
+      if (grp) {
+        grp.querySelectorAll('.mc-radio-opt, .mc-wl-opt').forEach(o => o.classList.remove('selected'));
+        this.closest('.mc-radio-opt, .mc-wl-opt').classList.add('selected');
+      }
+    });
+  });
+  // キャンバスは Sub 2 に遷移してから初期化する（非表示だとサイズ 0 になる）
+  // ここでは参照だけ取得しておく
+  mcCanvas = null; mcCtx = null;
+}
+
+function mcStartTest() {
+  const checked = document.querySelector('input[name="mc_wl"]:checked');
+  if (!checked) { alert('単語リストを選択してください。'); return; }
+  mcSelectedList = parseInt(checked.value);
+  mcWords = MC_WORD_LISTS[mcSelectedList].words.slice();
+  mcTimerSec = 0;
+  mcClear();
+  mcGoSub(1);
+}
+
+// === キャンバス ===
+let mcCanvasReady = false;
+function mcInitCanvas() {
+  mcCanvas = document.getElementById('mcClockCanvas');
+  if (!mcCanvas) return;
+  mcCtx = mcCanvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const size = 280;
+  mcCanvas.width = size * dpr;
+  mcCanvas.height = size * dpr;
+  mcCanvas.style.width = size + 'px';
+  mcCanvas.style.height = size + 'px';
+  mcCtx.scale(dpr, dpr);
+  mcDrawBase();
+  mcStrokeHistory = [];
+  mcSaveStroke();
+
+  // イベントリスナーは1回だけ登録
+  if (!mcCanvasReady) {
+    mcCanvas.addEventListener('mousedown', mcOnStart);
+    mcCanvas.addEventListener('mousemove', mcOnMove);
+    mcCanvas.addEventListener('mouseup', mcOnEnd);
+    mcCanvas.addEventListener('mouseleave', mcOnEnd);
+    mcCanvas.addEventListener('touchstart', function(e) { e.preventDefault(); mcOnStart({clientX: e.touches[0].clientX, clientY: e.touches[0].clientY}); }, {passive:false});
+    mcCanvas.addEventListener('touchmove', function(e) { e.preventDefault(); mcOnMove({clientX: e.touches[0].clientX, clientY: e.touches[0].clientY}); }, {passive:false});
+    mcCanvas.addEventListener('touchend', mcOnEnd);
+    mcCanvasReady = true;
+  }
+}
+
+function mcDrawBase() {
+  const s = 280, cx = s/2, cy = s/2, r = s/2 - 14;
+  mcCtx.clearRect(0, 0, s, s);
+  mcCtx.beginPath();
+  mcCtx.arc(cx, cy, r, 0, Math.PI*2);
+  mcCtx.strokeStyle = '#ccc';
+  mcCtx.lineWidth = 2;
+  mcCtx.stroke();
+  mcCtx.beginPath();
+  mcCtx.arc(cx, cy, 3, 0, Math.PI*2);
+  mcCtx.fillStyle = '#ccc';
+  mcCtx.fill();
+}
+
+function mcGetPos(e) {
+  const r = mcCanvas.getBoundingClientRect();
+  return { x: e.clientX - r.left, y: e.clientY - r.top };
+}
+function mcOnStart(e) {
+  mcDrawing = true;
+  const p = mcGetPos(e);
+  mcCtx.beginPath();
+  mcCtx.moveTo(p.x, p.y);
+  mcCtx.strokeStyle = '#000';
+  mcCtx.lineWidth = mcPenSize;
+  mcCtx.lineCap = 'round';
+  mcCtx.lineJoin = 'round';
+}
+function mcOnMove(e) {
+  if (!mcDrawing) return;
+  const p = mcGetPos(e);
+  mcCtx.lineTo(p.x, p.y);
+  mcCtx.stroke();
+}
+function mcOnEnd() {
+  if (mcDrawing) { mcDrawing = false; mcSaveStroke(); }
+}
+function mcSaveStroke() {
+  mcStrokeHistory.push(mcCtx.getImageData(0, 0, mcCanvas.width, mcCanvas.height));
+  if (mcStrokeHistory.length > 50) mcStrokeHistory.shift();
+}
+function mcUndo() {
+  if (mcStrokeHistory.length > 1) {
+    mcStrokeHistory.pop();
+    mcCtx.putImageData(mcStrokeHistory[mcStrokeHistory.length - 1], 0, 0);
+  }
+}
+function mcClear() {
+  if (!mcCanvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  mcCtx.setTransform(1, 0, 0, 1, 0, 0);
+  mcCtx.clearRect(0, 0, mcCanvas.width, mcCanvas.height);
+  mcCtx.scale(dpr, dpr);
+  mcDrawBase();
+  mcStrokeHistory = [];
+  mcSaveStroke();
+}
+function mcSetPen(size, btn) {
+  mcPenSize = size;
+  document.querySelectorAll('.mc-pen-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function mcFinishDraw() {
+  if (mcCanvas) mcClockImage = mcCanvas.toDataURL('image/png');
+  mcGoSub(3);
+}
+
+// === タイマー ===
+function mcStartTimer() {
+  mcStopTimer();
+  mcUpdateTimer();
+  mcTimerInterval = setInterval(() => { mcTimerSec++; mcUpdateTimer(); }, 1000);
+}
+function mcStopTimer() {
+  if (mcTimerInterval) { clearInterval(mcTimerInterval); mcTimerInterval = null; }
+}
+function mcUpdateTimer() {
+  const m = Math.floor(mcTimerSec / 60), s = mcTimerSec % 60;
+  const el = document.getElementById('mcTimerBadge');
+  if (el) el.textContent = `経過時間: ${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+// === 結果表示 ===
+function mcShowResult() {
+  const recallEl = document.querySelector('input[name="mc_recall"]:checked');
+  const cdtEl = document.querySelector('input[name="mc_cdt"]:checked');
+  if (!recallEl) { alert('遅延再生のスコアを選択してください。'); return; }
+  if (!cdtEl) { alert('時計描画テストの判定を選択してください。'); return; }
+
+  const recall = parseInt(recallEl.value);
+  const cdt = parseInt(cdtEl.value);
+  const total = recall + cdt;
+  const impaired = total <= 2;
+  const color = impaired ? 'var(--danger)' : 'var(--success)';
+  const judgeText = impaired ? '認知機能低下の疑いあり' : '認知機能低下の疑いなし';
+  const badgeClass = impaired ? 'mc-judge-ng' : 'mc-judge-ok';
+
+  // staffDataに反映
+  staffData.minicog_recall = String(recall);
+  staffData.minicog_clock = String(cdt);
+  staffData._minicog_score = total;
+  staffData._minicog_judge = impaired ? '認知機能低下疑い' : (total <= 3 ? '境界域' : '正常');
+
+  document.getElementById('mcResultCard').innerHTML = `
+    <div class="mc-score-big" style="color:${color};">${total}</div>
+    <div class="mc-score-label">/ 5点</div>
+    <div class="mc-score-breakdown">
+      <div class="mc-score-item"><div class="num">${recall}</div><div class="lbl">遅延再生 (0-3)</div></div>
+      <div class="mc-score-item"><div class="num">${cdt}</div><div class="lbl">時計描画 (0 or 2)</div></div>
+    </div>
+    <div style="text-align:center;"><span class="mc-judge-badge ${badgeClass}">${judgeText}</span></div>
+  `;
+
+  const m = Math.floor(mcTimerSec / 60), s = mcTimerSec % 60;
+  document.getElementById('mcResultDetail').innerHTML = `
+    <div class="q-label">検査詳細</div>
+    <table style="width:100%;font-size:13px;border-collapse:collapse;margin-top:8px;">
+      <tr style="border-bottom:1px solid #eee;"><td style="padding:6px;color:#888;">使用単語リスト</td><td style="padding:6px;">リスト${MC_WORD_LISTS[mcSelectedList].id}: ${mcWords.join('、')}</td></tr>
+      <tr style="border-bottom:1px solid #eee;"><td style="padding:6px;color:#888;">描画所要時間</td><td style="padding:6px;">${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}</td></tr>
+      <tr style="border-bottom:1px solid #eee;"><td style="padding:6px;color:#888;">遅延再生スコア</td><td style="padding:6px;">${recall} / 3</td></tr>
+      <tr><td style="padding:6px;color:#888;">時計描画テスト</td><td style="padding:6px;">${cdt === 2 ? '正常 (2点)' : '異常 (0点)'}</td></tr>
+    </table>
+    ${mcClockImage ? `<div class="mc-clock-thumb" style="margin-top:12px;"><div class="q-label" style="text-align:center;">時計描画</div><img src="${mcClockImage}" alt="時計描画"></div>` : ''}
+    <div style="background:#eaf2f8;border-radius:6px;padding:10px 14px;margin-top:12px;font-size:12px;line-height:1.7;">
+      <strong>判定基準：</strong> 合計 0〜2点 → 認知機能低下の疑いあり / 合計 3〜5点 → 疑いなし
+    </div>
+  `;
+
+  mcGoSub(5);
+}
+
+function mcRestart() {
+  mcSelectedList = -1;
+  mcWords = [];
+  mcClockImage = '';
+  mcTimerSec = 0;
+  mcStopTimer();
+  mcClear();
+  // ラジオリセット
+  document.querySelectorAll('.mc-sub input[type="radio"]').forEach(r => r.checked = false);
+  document.querySelectorAll('.mc-sub .mc-radio-opt, .mc-sub .mc-wl-opt').forEach(o => o.classList.remove('selected'));
+  mcGoSub(0);
+}
+
+// ---- Step 6: MNA-SF ----
+function renderMNASF() {
+  let html = h_section('MNA-SF（Mini Nutritional Assessment Short-Form）', '14点満点。12-14: 良好、8-11: At risk、0-7: 低栄養。');
+  html += h_radio('mnasf_a', 'A. 過去3ヶ月の食事量変化', [
+    ['著しい減少 (0)', 0], ['中等度 (1)', 1], ['減少なし (2)', 2]
+  ]);
+  html += h_radio('mnasf_b', 'B. 過去3ヶ月の体重変化', [
+    ['3kg以上減少 (0)', 0], ['不明 (1)', 1], ['1-3kg減少 (2)', 2], ['減少なし (3)', 3]
+  ]);
+  html += h_radio('mnasf_c', 'C. 可動性', [
+    ['寝たきり/車椅子 (0)', 0], ['離床可・外出不可 (1)', 1], ['外出可 (2)', 2]
+  ]);
+  html += h_radio('mnasf_d', 'D. 精神的ストレス/急性疾患（3ヶ月以内）', [
+    ['あり (0)', 0], ['なし (2)', 2]
+  ]);
+  html += h_radio('mnasf_e', 'E. 神経・精神的問題', [
+    ['重度認知症/うつ (0)', 0], ['中等度 (1)', 1], ['問題なし (2)', 2]
+  ]);
+  html += h_radio('mnasf_f', 'F. BMI（またはふくらはぎ周囲長）', [
+    ['BMI<19 (0)', 0], ['19≤BMI<21 (1)', 1], ['21≤BMI<23 (2)', 2], ['BMI≥23 (3)', 3]
+  ]);
+  html += h_score('mnasf');
+  return html;
+}
+
+// ---- Step 7: GLIM ----
+function renderGLIM() {
+  let html = h_section('GLIM基準（低栄養診断）', '表現型1つ以上 AND 病因1つ以上 → 低栄養と診断。');
+  html += '<div class="card"><div class="q-label">【表現型基準】</div>';
+  html += h_check('glim_wt_loss', '意図しない体重減少（6ヶ月以内5%超 or 6ヶ月以降10%超）');
+  html += h_check('glim_low_bmi', '低BMI（70歳未満: <18.5, 70歳以上: <20.0）');
+  html += h_check('glim_muscle', '骨格筋量の減少（下腿周囲長: 男<33cm, 女<32cm 等）');
+  html += '</div>';
+  html += '<div class="card"><div class="q-label">【病因基準】</div>';
+  html += h_check('glim_intake', '食事摂取量/吸収低下（通常量50%以下が1週間以上）');
+  html += h_check('glim_inflammation', '疾患による炎症（がん・心不全・COPD等の慢性炎症）');
+  html += '</div>';
+  html += h_score('glim');
+  return html;
+}
+
+// ---- Step 8: IADL ----
+function renderIADL() {
+  let html = h_section('Lawton IADL（手段的日常生活動作）', '0〜8点。各項目で該当する選択肢を1つ選び、右端の点数を合計。点数が高いほど自立。');
+
+  const iadlItems = [
+    { key: 'iadl_0', label: 'A. 電話を使用する能力', opts: [
+      ['自分で番号を調べて電話をかけることが出来る (1)', '1'],
+      ['2, 3のよく知っている番号であればかけることが出来る (1)', '1a'],
+      ['電話には出られるが自分からかけることは出来ない (1)', '1b'],
+      ['全く電話を使用出来ない (0)', '0'],
+    ]},
+    { key: 'iadl_1', label: 'B. 買い物', opts: [
+      ['すべての買い物を自分で行うことが出来る (1)', '1'],
+      ['少額の買い物は自分で行うことが出来る (0)', '0'],
+      ['誰かが一緒でないと買い物が出来ない (0)', '0a'],
+      ['全く買い物は出来ない (0)', '0b'],
+    ]},
+    { key: 'iadl_2', label: 'C. 食事の支度', opts: [
+      ['自分で考えてきちんと食事の支度をすることが出来る (1)', '1'],
+      ['材料が用意されれば適切な食事の支度をすることが出来る (0)', '0'],
+      ['温めることは出来るが、きちんとした食事をいつも作ることは出来ない (0)', '0a'],
+      ['食事の支度をしてもらう必要がある (0)', '0b'],
+    ]},
+    { key: 'iadl_3', label: 'D. 家事', opts: [
+      ['力仕事以外の家事を1人でこなすことが出来る (1)', '1'],
+      ['皿洗いやベッドの支度などの簡単な家事は出来る (1)', '1a'],
+      ['簡単な家事はできるが、きちんと清潔さを保つことが出来ない (1)', '1b'],
+      ['全ての家事に手助けを必要とする (1)', '1c'],
+      ['全く家事は出来ない (0)', '0'],
+    ]},
+    { key: 'iadl_4', label: 'E. 洗濯', opts: [
+      ['自分の洗濯は全て自分で行うことが出来る (1)', '1'],
+      ['靴下などの小物の洗濯を行うことは出来る (1)', '1a'],
+      ['洗濯は他の人にしてもらう必要がある (0)', '0'],
+    ]},
+    { key: 'iadl_5', label: 'F. 交通手段', opts: [
+      ['1人で公共交通機関を利用し、あるいは自家用車で外出することが出来る (1)', '1'],
+      ['1人でタクシーは利用出来るが、その他の公共交通機関は利用出来ない (1)', '1a'],
+      ['付き添いが一緒なら、公共交通機関を利用し外出することが出来る (1)', '1b'],
+      ['付き添いが一緒であれば、タクシーか自家用車で外出することが出来る (0)', '0'],
+      ['全く外出することが出来ない (0)', '0a'],
+    ]},
+    { key: 'iadl_6', label: 'G. 服薬の管理', opts: [
+      ['自分で正しい時に正しい量の薬を飲むことが出来る (1)', '1'],
+      ['前もって薬が仕分けされていれば、自分で飲むことが出来る (0)', '0'],
+      ['自分で薬を管理することが出来ない (0)', '0a'],
+    ]},
+    { key: 'iadl_7', label: 'H. 金銭管理能力', opts: [
+      ['家計を自分で管理出来る（支払計画・実施が出来る、銀行へ行くこと等） (1)', '1'],
+      ['日々の支払いは出来るが、預金の出し入れや大きな買い物等では手助けを必要とする (1)', '1a'],
+      ['金銭の取り扱いを行うことが出来ない (0)', '0'],
+    ]}
+  ];
+
+  for (const item of iadlItems) {
+    const curVal = getVal(item.key);
+    const badge = dataBadge(item.key);
+    html += `<div class="card"><div class="q-label">${item.label}${badge}</div><div class="radio-group" data-key="${item.key}">`;
+    for (const [text, val] of item.opts) {
+      const checked = String(curVal) === String(val) ? 'checked' : '';
+      const sel = checked ? 'selected' : '';
+      html += `<label class="radio-opt ${sel}"><input type="radio" name="${item.key}" value="${val}" ${checked}>${text}</label>`;
+    }
+    html += '</div></div>';
+  }
+
+  html += h_score('iadl');
+  return html;
+}
+
+// ---- Step 9: E-PASS ----
+function renderEPASS() {
+  const age = getVal('patient_age', '未入力');
+  let html = h_section('E-PASS（術前リスクスコア PRS）',
+    `PRS = -0.0686 + 0.00345×年齢 + 0.323×心疾患 + 0.205×肺疾患 + 0.153×糖尿病 + 0.148×PS + 0.0666×ASA`);
+  html += `<div class="card"><p style="font-size:13px;">年齢: <strong>${age}</strong>歳（基本情報から取得）</p></div>`;
+  html += h_radio('epass_heart', '重症心疾患（NYHA III度以上等）', [['なし (0)', 0], ['あり (1)', 1]]);
+  html += h_radio('epass_lung', '重症肺疾患（%VC<60% or FEV1.0%<50%等）', [['なし (0)', 0], ['あり (1)', 1]]);
+  html += h_radio('epass_dm', '糖尿病', [['なし (0)', 0], ['あり (1)', 1]]);
+  html += h_radio('epass_ps', 'Performance Status (ECOG)', [
+    ['PS 0: 無症状 (0)', 0], ['PS 1: 軽度症状 (1)', 1], ['PS 2: 日中50%以上起居 (2)', 2],
+    ['PS 3: 日中50%以上臥床 (3)', 3], ['PS 4: 完全臥床 (4)', 4]
+  ]);
+  html += h_radio('epass_asa', 'ASA身体状態分類', [
+    ['ASA I (1)', 1], ['ASA II (2)', 2], ['ASA III (3)', 3], ['ASA IV (4)', 4], ['ASA V (5)', 5]
+  ]);
+  html += h_score('epass');
+  return html;
+}
+
+// ---- Step 10: CGA ----
+function renderCGA() {
+  let html = h_section('CGA概要（包括的老年アセスメント）', '5ドメインの概括的評価。');
+  html += h_radio('cga_physical', '身体機能（ADL/IADL総合）', [
+    ['自立', '自立'], ['一部介助', '一部介助'], ['要介助', '要介助'], ['全介助', '全介助']
+  ]);
+  html += h_radio('cga_cognitive', '認知機能・気分', [
+    ['問題なし', '問題なし'], ['MCI疑い', 'MCI疑い'], ['認知症疑い', '認知症疑い'], ['うつ傾向', 'うつ傾向']
+  ]);
+  html += h_radio('cga_nutrition', '栄養状態', [
+    ['良好', '良好'], ['At risk', 'At risk'], ['低栄養', '低栄養']
+  ]);
+  html += h_radio('cga_comorbidity', '併存疾患・ポリファーマシー', [
+    ['軽度（CCI 0-2, 薬剤4種以下）', '軽度'],
+    ['中等度（CCI 3-5 or 薬剤5種以上）', '中等度'],
+    ['高度（CCI 6以上 + ポリファーマシー）', '高度']
+  ]);
+  html += h_radio('cga_social', '社会的支援', [
+    ['十分（同居家族あり）', '十分'],
+    ['部分的（独居・近隣に支援者）', '部分的'],
+    ['不十分（独居・支援なし）', '不十分']
+  ]);
+  html += `<div class="card"><div class="q-label">CGA補足メモ</div>
+    <textarea data-key="cga_memo" rows="3" placeholder="自由記載">${getVal('cga_memo')}</textarea></div>`;
+  return html;
+}
+
+// ---- Step 11: サマリー ----
+function renderSummary() {
+  recalcAll();
+  let html = h_section('評価結果サマリー', '全スコアの一覧と総合判定。CSV出力ボタンで保存できます。');
+
+  // 患者情報
+  const sex = getVal('patient_sex') === 'M' ? '男性' : getVal('patient_sex') === 'F' ? '女性' : '-';
+  html += '<div class="card"><div class="q-label">【患者情報】</div>';
+  html += `<table class="summary-table">
+    <tr><td>患者ID</td><td><strong>10${getVal('patient_id','-')}</strong></td><td>氏名</td><td>${getVal('patient_name','-')}</td></tr>
+    <tr><td>年齢</td><td>${getVal('patient_age','-')}歳</td><td>性別</td><td>${sex}</td></tr>
+    <tr><td>BMI</td><td>${getVal('patient_bmi','-')} kg/m²</td><td>評価日</td><td>${getVal('assessment_date','-')}</td></tr>
+    <tr><td>現体重</td><td>${getVal('patient_weight','-')} kg</td><td>3ヶ月前</td><td>${getVal('weight_3m','-')} kg</td></tr>
+    <tr><td>半年前</td><td>${getVal('weight_6m','-')} kg</td><td>1年前</td><td>${getVal('weight_1y','-')} kg</td></tr>
+    <tr><td>社会的支援</td><td colspan="3">${getVal('cga_social','-')}</td></tr>
+  </table></div>`;
+
+  // スコア一覧
+  html += '<div class="card"><div class="q-label">【スコア一覧】</div>';
+  html += '<table class="summary-table"><tr><th>評価ツール</th><th>スコア</th><th>判定</th><th>基準</th></tr>';
+
+  const rows = [
+    ['G8', staffData._g8_score, '/17', staffData._g8_judge, '14以下で異常'],
+    ['CFS', staffData._cfs_val, '/9', staffData._cfs_judge, '5以上でフレイル'],
+    ['改訂J-CHS', staffData._fried_score, '/5', staffData._fried_judge, '3以上でフレイル'],
+    ['Mini-Cog', staffData._minicog_score, '/5', staffData._minicog_judge, '2以下で認知低下疑い'],
+    ['IADL', staffData._iadl_score, '/8', staffData._iadl_judge, '低いほど依存度高'],
+    ['mFI-5', staffData._mfi5_score, '/5', staffData._mfi5_judge, '2以上でフレイル'],
+    ['MNA-SF', staffData._mnasf_score, '/14', staffData._mnasf_judge, '7以下で低栄養'],
+    ['GLIM', '-', '', staffData._glim_judge, '表現型+病因'],
+    ['E-PASS PRS', staffData._epass_prs, '', staffData._epass_judge, '0.5以上で高リスク'],
+  ];
+
+  for (const [name, score, max, judge, crit] of rows) {
+    const jClass = judgeCls(judge);
+    const sText = (score !== undefined && score !== '-') ? score + max : '-';
+    html += `<tr><td>${name}</td><td><strong>${sText}</strong></td><td class="${jClass}"><strong>${judge || '-'}</strong></td><td style="font-size:11px;color:#888;">${crit}</td></tr>`;
+  }
+  html += '</table></div>';
+
+  // CGA概要
+  const cga = staffData._cga || {};
+  html += '<div class="card"><div class="q-label">【CGA概要（自動統合）】</div>';
+  html += `<table class="summary-table">
+    <tr><td>身体機能</td><td>${cga.physical || '-'}</td><td style="font-size:11px;color:#888;">← IADL ${staffData._iadl_score ?? '?'}/8</td></tr>
+    <tr><td>認知機能</td><td>${cga.cognitive || '-'}</td><td style="font-size:11px;color:#888;">← Mini-Cog ${staffData._minicog_score ?? '?'}/5</td></tr>
+    <tr><td>栄養状態</td><td>${cga.nutrition || '-'}</td><td style="font-size:11px;color:#888;">← MNA-SF ${staffData._mnasf_score ?? '?'}/14</td></tr>
+    <tr><td>併存疾患</td><td>${cga.comorbidity || '-'}</td><td style="font-size:11px;color:#888;">← 追加評価で入力</td></tr>
+    <tr><td>社会的支援</td><td>${cga.social || '-'}</td><td style="font-size:11px;color:#888;">← 基本情報で入力</td></tr>
+  </table></div>`;
+
+  if (patientData) {
+    html += '<div class="card" style="background:#d5f5e3;"><div class="q-label" style="color:#1e8449;">患者入力データ読込済み</div><p style="font-size:12px;">患者が自己回答した G8・体重・IADL・Fried の一部が統合されています。</p></div>';
+  }
+  if (nurseData) {
+    html += '<div class="card" style="background:#d6eaf8;"><div class="q-label" style="color:#1a5276;">看護師入力データ読込済み</div><p style="font-size:12px;">看護師が入力した基本情報・G8・CFS・J-CHS計測値・Mini-Cog・mFI-5が統合されています。</p></div>';
+  }
+
+  return html;
+}
+
+function judgeCls(j) {
+  if (!j) return '';
+  const danger = ['脆弱（異常）','フレイル','重度フレイル','低栄養','認知機能低下疑い','重度低下','高リスク','GLIM低栄養'];
+  const warn = ['プレフレイル','低栄養のおそれ','境界域','中等度低下','中リスク'];
+  if (danger.includes(j)) return 'judge-danger';
+  if (warn.includes(j)) return 'judge-warning';
+  return 'judge-normal';
+}
+
+// =========================================================================
+// スコア計算
+// =========================================================================
+function calcScore(id) {
+  saveCurrentStep();
+  const valEl = document.getElementById('scoreVal_' + id);
+  const judgeEl = document.getElementById('scoreJudge_' + id);
+  if (!valEl) return;
+
+  try {
+    const calcs = { g8: calcG8, cfs: calcCFS, fried: calcFried, mfi5: calcMFI5,
+      minicog: calcMiniCog, iadl: calcIADL, mnasf: calcMNASF, glim: calcGLIM, epass: calcEPASS };
+    const result = calcs[id]();
+    valEl.textContent = result.text;
+    judgeEl.textContent = '判定: ' + result.judge;
+    judgeEl.className = 'score-judge ' + judgeCls(result.judge);
+  } catch(e) {
+    valEl.textContent = 'エラー: 全項目を入力してください';
+    judgeEl.textContent = '';
+  }
+}
+
+function gv(k) { return parseFloat(getVal(k, 0)); }
+
+function calcG8() {
+  const t = gv('g8_a')+gv('g8_b')+gv('g8_c')+gv('g8_e')+gv('g8_f')+gv('g8_h')+gv('g8_p')+gv('g8_age');
+  staffData._g8_score = t;
+  const j = t <= 14 ? '脆弱（異常）' : '正常';
+  staffData._g8_judge = j;
+  return { text: `G8スコア: ${t} / 17`, judge: j };
+}
+
+function calcCFS() {
+  const s = parseInt(getVal('cfs_score', 0));
+  staffData._cfs_val = s;
+  let j = '非フレイル';
+  if (s >= 7) j = '重度フレイル';
+  else if (s >= 5) j = 'フレイル';
+  else if (s === 4) j = 'プレフレイル';
+  staffData._cfs_judge = j;
+  return { text: `CFS: ${s} / 9`, judge: j };
+}
+
+function autoJudgeFried() {
+  saveCurrentStep();
+  const msgs = [];
+
+  // 体重減少（半年前）
+  const w6m = parseFloat(getVal('weight_6m', 0));
+  const wNow = parseFloat(getVal('patient_weight', 0));
+  if (w6m > 0 && wNow > 0) {
+    const diff = w6m - wNow;
+    const result = diff >= 2 ? 1 : 0;
+    staffData.fried_wt = result;
+    msgs.push(`体重減少: ${diff >= 0 ? '-' : '+'}${Math.abs(diff).toFixed(1)}kg → ${result ? '該当' : '非該当'}`);
+  }
+
+  // 握力
+  const sex = getVal('patient_sex');
+  const gripR = parseFloat(getVal('fried_grip_r', 0));
+  const gripL = parseFloat(getVal('fried_grip_l', 0));
+  const gripMax = Math.max(gripR, gripL);
+  if (gripMax > 0 && sex) {
+    const th = sex === 'M' ? 28 : 18;
+    const result = gripMax < th ? 1 : 0;
+    staffData.fried_grip = result;
+    msgs.push(`握力: 最大${gripMax}kg（基準${th}kg）→ ${result ? '該当' : '非該当'}`);
+  }
+
+  // 歩行速度
+  const speed = parseFloat(getVal('fried_walk_speed', 0));
+  if (speed > 0) {
+    const result = speed < 1.0 ? 1 : 0;
+    staffData.fried_walk = result;
+    msgs.push(`歩行速度: ${speed} m/秒（基準1.0）→ ${result ? '該当' : '非該当'}`);
+  }
+
+  const el = document.getElementById('friedAutoResult');
+  if (el) {
+    el.innerHTML = msgs.length
+      ? '<strong style="color:#27ae60;">自動判定結果:</strong><br>' + msgs.map(m => '✓ ' + m).join('<br>')
+      : '<span style="color:#e74c3c;">性別・体重・握力・歩行速度を入力してください</span>';
+  }
+
+  // 画面を再描画して反映
+  renderStep();
+}
+
+function calcFried() {
+  const t = gv('fried_wt')+gv('fried_grip')+gv('fried_exhaust')+gv('fried_walk')+gv('fried_activity');
+  staffData._fried_score = t;
+  let j = '健常';
+  if (t >= 3) j = 'フレイル';
+  else if (t >= 1) j = 'プレフレイル';
+  staffData._fried_judge = j;
+  return { text: `改訂J-CHS: ${t} / 5項目`, judge: j };
+}
+
+function calcMFI5() {
+  const t = gv('mfi5_chf')+gv('mfi5_dm')+gv('mfi5_copd')+gv('mfi5_func')+gv('mfi5_htn');
+  staffData._mfi5_score = t;
+  let j = '非フレイル';
+  if (t >= 2) j = 'フレイル';
+  else if (t === 1) j = 'プレフレイル';
+  staffData._mfi5_judge = j;
+  return { text: `mFI-5: ${t} / 5`, judge: j };
+}
+
+function calcMiniCog() {
+  const t = gv('minicog_recall') + gv('minicog_clock');
+  staffData._minicog_score = t;
+  let j = '正常';
+  if (t <= 2) j = '認知機能低下疑い';
+  else if (t <= 3) j = '境界域';
+  staffData._minicog_judge = j;
+  return { text: `Mini-Cog: ${t} / 5`, judge: j };
+}
+
+function calcMNASF() {
+  const t = gv('mnasf_a')+gv('mnasf_b')+gv('mnasf_c')+gv('mnasf_d')+gv('mnasf_e')+gv('mnasf_f');
+  staffData._mnasf_score = t;
+  let j = '栄養状態良好';
+  if (t <= 7) j = '低栄養';
+  else if (t <= 11) j = '低栄養のおそれ';
+  staffData._mnasf_judge = j;
+  return { text: `MNA-SF: ${t} / 14`, judge: j };
+}
+
+function calcGLIM() {
+  const p = gv('glim_wt_loss')+gv('glim_low_bmi')+gv('glim_muscle');
+  const e = gv('glim_intake')+gv('glim_inflammation');
+  staffData._glim_pheno = p; staffData._glim_etio = e;
+  const diag = (p >= 1 && e >= 1);
+  const j = diag ? 'GLIM低栄養' : '低栄養なし';
+  staffData._glim_judge = j;
+  return { text: `GLIM: 表現型 ${p}/3, 病因 ${e}/2`, judge: j };
+}
+
+function calcIADL() {
+  let t = 0;
+  for (let i = 0; i < 8; i++) t += gv('iadl_' + i);
+  staffData._iadl_score = t;
+  let j = '概ね自立';
+  if (t <= 3) j = '重度低下';
+  else if (t <= 5) j = '中等度低下';
+  staffData._iadl_judge = j;
+  return { text: `IADL: ${t} / 8`, judge: j };
+}
+
+function calcEPASS() {
+  const age = parseFloat(getVal('patient_age', 0));
+  const prs = -0.0686 + 0.00345*age + 0.323*gv('epass_heart') + 0.205*gv('epass_lung')
+    + 0.153*gv('epass_dm') + 0.148*gv('epass_ps') + 0.0666*gv('epass_asa');
+  staffData._epass_prs = prs.toFixed(4);
+  let j = '低リスク';
+  if (prs >= 0.5) j = '高リスク';
+  else if (prs >= 0.3) j = '中リスク';
+  staffData._epass_judge = j;
+  return { text: `E-PASS PRS: ${prs.toFixed(4)}`, judge: j };
+}
+
+// --- MNA-SF（G8から流用 + D のみ追加） ---
+function calcMNASF() {
+  // A=g8_a, B=g8_b, C=g8_c, D=mnasf_d(追加), E=g8_e, F=g8_f
+  const t = gv('g8_a') + gv('g8_b') + gv('g8_c') + gv('mnasf_d') + gv('g8_e') + gv('g8_f');
+  staffData._mnasf_score = t;
+  let j = '栄養状態良好';
+  if (t <= 7) j = '低栄養';
+  else if (t <= 11) j = '低栄養のおそれ';
+  staffData._mnasf_judge = j;
+  return { text: `MNA-SF: ${t} / 14`, judge: j };
+}
+
+// --- GLIM（体重履歴・BMI・G8 A + 追加項目から自動判定） ---
+function calcGLIM() {
+  let pheno = 0;
+  // 表現型1: 体重減少（6ヶ月以内5%超）
+  const w6m = parseFloat(getVal('weight_6m', 0));
+  const wNow = parseFloat(getVal('patient_weight', 0));
+  if (w6m > 0 && wNow > 0) {
+    const pct = ((w6m - wNow) / w6m) * 100;
+    if (pct > 5) pheno++;
+  }
+  // 表現型2: 低BMI
+  const bmi = parseFloat(getVal('patient_bmi', 0));
+  const age = parseInt(getVal('patient_age', 0));
+  if (bmi > 0) {
+    if ((age >= 70 && bmi < 20) || (age < 70 && bmi < 18.5)) pheno++;
+  }
+  // 表現型3: 骨格筋量減少（下腿周囲長）
+  const calf = parseFloat(getVal('glim_calf', 0));
+  const sex = getVal('patient_sex');
+  if (calf > 0 && sex) {
+    if ((sex === 'M' && calf < 34) || (sex === 'F' && calf < 33)) pheno++;
+  }
+
+  let etio = 0;
+  // 病因1: 食事摂取低下（G8 A ≤ 1 で該当とする）
+  if (gv('g8_a') <= 1) etio++;
+  // 病因2: 炎症
+  etio += gv('glim_inflammation');
+
+  staffData._glim_pheno = pheno;
+  staffData._glim_etio = etio;
+  const diag = (pheno >= 1 && etio >= 1);
+  const j = diag ? 'GLIM低栄養' : '低栄養なし';
+  staffData._glim_judge = j;
+  return { text: `GLIM: 表現型 ${pheno}/3, 病因 ${etio}/2`, judge: j };
+}
+
+// --- E-PASS PRS（年齢・mFI-5 DM 流用 + 追加項目） ---
+function calcEPASS() {
+  const age = parseFloat(getVal('patient_age', 0));
+  const dm = gv('mfi5_dm'); // mFI-5から流用
+  const prs = -0.0686 + 0.00345 * age
+    + 0.323 * gv('epass_heart') + 0.205 * gv('epass_lung')
+    + 0.153 * dm + 0.148 * gv('epass_ps') + 0.0666 * gv('epass_asa');
+  staffData._epass_prs = prs.toFixed(4);
+  let j = '低リスク';
+  if (prs >= 0.5) j = '高リスク';
+  else if (prs >= 0.3) j = '中リスク';
+  staffData._epass_judge = j;
+  return { text: `E-PASS PRS: ${prs.toFixed(4)}`, judge: j };
+}
+
+// --- CGA概要（各ステップから自動統合） ---
+function calcCGA() {
+  const cga = {};
+  // 身体機能 ← IADL
+  const iadl = staffData._iadl_score;
+  if (iadl !== undefined) {
+    if (iadl >= 7) cga.physical = '自立';
+    else if (iadl >= 5) cga.physical = '一部介助';
+    else if (iadl >= 3) cga.physical = '要介助';
+    else cga.physical = '全介助';
+  }
+  // 認知 ← Mini-Cog
+  const mc = staffData._minicog_score;
+  if (mc !== undefined) {
+    if (mc >= 4) cga.cognitive = '問題なし';
+    else if (mc >= 3) cga.cognitive = 'MCI疑い';
+    else cga.cognitive = '認知症疑い';
+  }
+  // 栄養 ← MNA-SF
+  const mna = staffData._mnasf_score;
+  if (mna !== undefined) {
+    if (mna >= 12) cga.nutrition = '良好';
+    else if (mna >= 8) cga.nutrition = 'At risk';
+    else cga.nutrition = '低栄養';
+  }
+  // 併存疾患 ← 追加入力
+  cga.comorbidity = getVal('cga_comorbidity', '-');
+  // 社会 ← 基本情報
+  cga.social = getVal('cga_social', '-');
+
+  staffData._cga = cga;
+  return cga;
+}
+
+function recalcAll() {
+  try { calcG8(); } catch(e) {}
+  try { calcCFS(); } catch(e) {}
+  try { calcFried(); } catch(e) {}
+  try { calcMFI5(); } catch(e) {}
+  try { calcMiniCog(); } catch(e) {}
+  try { calcIADL(); } catch(e) {}
+  try { calcMNASF(); } catch(e) {}
+  try { calcGLIM(); } catch(e) {}
+  try { calcEPASS(); } catch(e) {}
+  try { calcCGA(); } catch(e) {}
+}
+
+// =========================================================================
+// 補助機能
+// =========================================================================
+function tryLoadPatient() {
+  saveCurrentStep();
+  const pid = getVal('patient_id');
+  if (!pid) { alert('患者IDを入力してください'); return; }
+  const foundPatient = loadPatientData(pid);
+  const foundNurse = loadNurseData(pid);
+  const el = document.getElementById('loadResult');
+  let msgs = [];
+  if (foundPatient) {
+    msgs.push('<span style="color:#27ae60; font-weight:600;">患者データ読込済（G8, 体重, IADL, Fried一部）</span>');
+  } else {
+    msgs.push('<span style="color:#e74c3c;">患者データなし（患者用アンケート未回答）</span>');
+  }
+  if (foundNurse) {
+    msgs.push('<span style="color:#1a5276; font-weight:600;">看護師データ読込済（基本情報, G8, CFS, J-CHS計測, Mini-Cog, mFI-5）</span>');
+  } else {
+    msgs.push('<span style="color:#e74c3c;">看護師データなし（看護師用評価未入力）</span>');
+  }
+  el.innerHTML = msgs.join('<br>');
+  if (foundPatient || foundNurse) {
+    document.getElementById('topPatientId').textContent = 'ID: ' + pid;
+  }
+  // 読込後に画面を再描画して反映
+  renderStep();
+  // 体重・BMIを自動計算
+  calcWeightAndBMI();
+  // 再描画して反映
+  renderStep();
+}
+
+function calcWeightAndBMI() {
+  saveCurrentStep();
+  const h = parseFloat(getVal('patient_height', 0)) / 100;
+  const wNow = parseFloat(getVal('patient_weight', 0));
+  const w3m = parseFloat(getVal('weight_3m', 0));
+  const w6m = parseFloat(getVal('weight_6m', 0));
+  const w1y = parseFloat(getVal('weight_1y', 0));
+
+  const msgs = [];
+  const filled = [];
+
+  // --- BMI ---
+  if (h > 0 && wNow > 0) {
+    const bmi = wNow / (h * h);
+    const bmiStr = bmi.toFixed(1);
+    staffData.patient_bmi = bmiStr;
+    msgs.push(`BMI = ${bmiStr} kg/m²`);
+
+    // → G8 F項 (BMI区分) を自動設定
+    let g8f;
+    if (bmi < 19) g8f = 0;
+    else if (bmi < 21) g8f = 1;
+    else if (bmi < 23) g8f = 2;
+    else g8f = 3;
+    staffData.g8_f = g8f;
+    const g8fLabels = {0:'19未満', 1:'19-21', 2:'21-23', 3:'23以上'};
+    filled.push(`G8 F項(BMI) → ${g8fLabels[g8f]}（${bmiStr}）`);
+  }
+
+  // --- 3ヶ月間の体重変化 → G8 B項 ---
+  if (wNow > 0 && w3m > 0) {
+    const diff3m = w3m - wNow;
+    const pct3m = ((diff3m / w3m) * 100).toFixed(1);
+    msgs.push(`3ヶ月間の変化: ${diff3m > 0 ? '-' : '+'}${Math.abs(diff3m).toFixed(1)}kg（${diff3m > 0 ? '-' : '+'}${Math.abs(pct3m)}%）`);
+
+    let g8b;
+    if (diff3m >= 3) g8b = 0;       // 3kg以上の減少
+    else if (diff3m >= 1) g8b = 2;   // 1-3kgの減少
+    else g8b = 3;                     // 減少なし
+    staffData.g8_b = g8b;
+    const g8bLabels = {0:'3kg以上の減少', 2:'1-3kgの減少', 3:'減少なし'};
+    filled.push(`G8 B項(体重変化) → ${g8bLabels[g8b]}`);
+  }
+
+  // --- 半年間の体重変化 → 改訂J-CHS 体重減少 ---
+  if (wNow > 0 && w6m > 0) {
+    const diff6m = w6m - wNow;
+    const pct6m = ((diff6m / w6m) * 100).toFixed(1);
+    msgs.push(`半年間の変化: ${diff6m > 0 ? '-' : '+'}${Math.abs(diff6m).toFixed(1)}kg（${diff6m > 0 ? '-' : '+'}${Math.abs(pct6m)}%）`);
+
+    // 改訂J-CHS: 6ヶ月で2kg以上の減少
+    const friedWt = diff6m >= 2 ? 1 : 0;
+    staffData.fried_wt = friedWt;
+    filled.push(`改訂J-CHS 体重減少 → ${friedWt ? '該当する' : '該当しない'}（6ヶ月間で${diff6m > 0 ? '-' : '+'}${Math.abs(diff6m).toFixed(1)}kg、基準: 2kg以上）`);
+  }
+
+  // --- 1年間の体重変化（参考情報） ---
+  if (wNow > 0 && w1y > 0) {
+    const diff1y = w1y - wNow;
+    const pct1y = ((diff1y / w1y) * 100).toFixed(1);
+    msgs.push(`1年間の変化: ${diff1y > 0 ? '-' : '+'}${Math.abs(diff1y).toFixed(1)}kg（${diff1y > 0 ? '-' : '+'}${Math.abs(pct1y)}%）`);
+  }
+
+  // 結果表示
+  const calcEl = document.getElementById('weightCalcResult');
+  if (calcEl) {
+    calcEl.innerHTML = msgs.length
+      ? '<strong>計算結果:</strong><br>' + msgs.map(m => '・' + m).join('<br>')
+      : '<span style="color:#e74c3c;">身長・体重を入力してください</span>';
+  }
+  const fillEl = document.getElementById('autoFillResult');
+  if (fillEl) {
+    fillEl.innerHTML = filled.length
+      ? '<strong style="color:#27ae60;">自動反映済み:</strong><br>' + filled.map(f => '✓ ' + f).join('<br>')
+      : '';
+  }
+}
+
+// =========================================================================
+// CSV出力
+// =========================================================================
+function exportCSV() {
+  saveCurrentStep();
+  recalcAll();
+
+  const sex = getVal('patient_sex') === 'M' ? '男性' : getVal('patient_sex') === 'F' ? '女性' : '';
+  const cga = staffData._cga || {};
+
+  const headers = [
+    // 基本情報
+    '評価日','患者ID','患者氏名','年齢','性別','身長(cm)',
+    '現体重(kg)','3ヶ月前体重(kg)','半年前体重(kg)','1年前体重(kg)','BMI',
+    '社会的支援',
+    // G8 全項目
+    'G8_A(食事)','G8_B(体重)','G8_C(可動性)','G8_E(神経精神)','G8_F(BMI区分)','G8_H(処方薬)','処方薬数','G8_P(自己健康評価)','G8_年齢区分',
+    'G8スコア','G8判定',
+    // CFS
+    'CFS','CFS判定',
+    // J-CHS 全項目
+    'J-CHS_体重減少','J-CHS_握力判定','右握力(kg)','左握力(kg)',
+    'J-CHS_疲労感','J-CHS_歩行速度判定','歩行速度(m/s)','J-CHS_身体活動',
+    '改訂J-CHS合計','改訂J-CHS判定',
+    // Mini-Cog
+    'Mini-Cog_遅延再生','Mini-Cog_時計描画','Mini-Cog合計','Mini-Cog判定',
+    // IADL 全項目
+    'IADL_A(電話)','IADL_B(買い物)','IADL_C(食事支度)','IADL_D(家事)','IADL_E(洗濯)','IADL_F(交通)','IADL_G(服薬)','IADL_H(金銭)',
+    'IADL合計','IADL判定',
+    // mFI-5
+    'mFI5_心不全','mFI5_糖尿病','mFI5_COPD','mFI5_機能非自立','mFI5_高血圧',
+    'mFI-5合計','mFI-5判定',
+    // MNA-SF
+    'MNA-SF_D(ストレス)',
+    'MNA-SF合計','MNA-SF判定',
+    // GLIM
+    '下腿周囲長(cm)','GLIM_炎症',
+    'GLIM表現型','GLIM病因','GLIM診断',
+    // E-PASS
+    'E-PASS_心疾患','E-PASS_肺疾患','ECOG_PS','ASA-PS',
+    'E-PASS_PRS','E-PASS判定',
+    // CGA
+    'CGA身体','CGA認知','CGA栄養','CGA併存疾患','CGA社会支援','CGAメモ',
+    // Fried 患者自己申告
+    '患者_疲労感','患者_軽い運動','患者_定期的運動','患者_MNA-SF_D',
+    // メタ
+    '患者入力あり','看護師入力あり'
+  ];
+
+  const values = [
+    // 基本情報
+    getVal('assessment_date'), '10' + getVal('patient_id'), getVal('patient_name'),
+    getVal('patient_age'), sex, getVal('patient_height'),
+    getVal('patient_weight'), getVal('weight_3m'), getVal('weight_6m'), getVal('weight_1y'),
+    getVal('patient_bmi'),
+    getVal('cga_social'),
+    // G8 全項目
+    getVal('g8_a'), getVal('g8_b'), getVal('g8_c'), getVal('g8_e'), getVal('g8_f'), getVal('g8_h'), getVal('g8_drug_count'), getVal('g8_p'), getVal('g8_age'),
+    staffData._g8_score ?? '', staffData._g8_judge ?? '',
+    // CFS
+    staffData._cfs_val ?? '', staffData._cfs_judge ?? '',
+    // J-CHS 全項目
+    getVal('fried_wt'), getVal('fried_grip'), getVal('fried_grip_r'), getVal('fried_grip_l'),
+    getVal('fried_exhaust'), getVal('fried_walk'), getVal('fried_walk_speed'), getVal('fried_activity'),
+    staffData._fried_score ?? '', staffData._fried_judge ?? '',
+    // Mini-Cog
+    getVal('minicog_recall'), getVal('minicog_clock'), staffData._minicog_score ?? '', staffData._minicog_judge ?? '',
+    // IADL 全項目 (parseFloat to get score from suffixed values)
+    parseFloat(getVal('iadl_0', '')), parseFloat(getVal('iadl_1', '')), parseFloat(getVal('iadl_2', '')), parseFloat(getVal('iadl_3', '')),
+    parseFloat(getVal('iadl_4', '')), parseFloat(getVal('iadl_5', '')), parseFloat(getVal('iadl_6', '')), parseFloat(getVal('iadl_7', '')),
+    staffData._iadl_score ?? '', staffData._iadl_judge ?? '',
+    // mFI-5
+    getVal('mfi5_chf'), getVal('mfi5_dm'), getVal('mfi5_copd'), getVal('mfi5_func'), getVal('mfi5_htn'),
+    staffData._mfi5_score ?? '', staffData._mfi5_judge ?? '',
+    // MNA-SF
+    getVal('mnasf_d'),
+    staffData._mnasf_score ?? '', staffData._mnasf_judge ?? '',
+    // GLIM
+    getVal('glim_calf'), getVal('glim_inflammation'),
+    staffData._glim_pheno ?? '', staffData._glim_etio ?? '', staffData._glim_judge ?? '',
+    // E-PASS
+    getVal('epass_heart'), getVal('epass_lung'), getVal('epass_ps'), getVal('epass_asa'),
+    staffData._epass_prs ?? '', staffData._epass_judge ?? '',
+    // CGA
+    cga.physical ?? '', cga.cognitive ?? '', cga.nutrition ?? '',
+    cga.comorbidity ?? '', cga.social ?? '', getVal('cga_memo'),
+    // 患者自己申告の生データ
+    patientData ? (patientData.fried_exhaust ?? '') : '',
+    patientData ? (patientData.fried_activity_q1 ?? '') : '',
+    patientData ? (patientData.fried_activity_q2 ?? '') : '',
+    patientData ? (patientData.mnasf_d ?? '') : '',
+    // メタ
+    patientData ? 'あり' : 'なし',
+    nurseData ? 'あり' : 'なし'
+  ];
+
+  // IADL values: replace NaN with empty string
+  for (let i = 0; i < values.length; i++) {
+    if (typeof values[i] === 'number' && isNaN(values[i])) values[i] = '';
+  }
+
+  const csvContent = '\uFEFF' + [headers, values].map(row =>
+    row.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')
+  ).join('\n');
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const pid = getVal('patient_id', 'unknown');
+  const dt = new Date().toISOString().slice(0,10).replace(/-/g, '');
+  a.href = url;
+  a.download = `assessment_${pid}_${dt}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+
+  alert('CSVファイルをダウンロードしました。');
+}
+
+// =========================================================================
+// 初期化
+// =========================================================================
+buildSidebar();
+renderStep();
+</script>
+</body>
+</html>

@@ -1,0 +1,1792 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1a5276">
+<link rel="manifest" href="manifest.json">
+<title>術前評価（看護師用）</title>
+<style>
+:root {
+  --primary: #1a5276;
+  --primary-accent: #3498db;
+  --success: #27ae60;
+  --warning: #f39c12;
+  --danger: #e74c3c;
+  --bg: #f5f6fa;
+  --card: #ffffff;
+  --text: #2c3e50;
+  --text-light: #7f8c8d;
+  --border: #dcdfe3;
+  --sidebar-w: 230px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* サイドバー */
+.sidebar {
+  position: fixed;
+  top: 0; left: 0;
+  width: var(--sidebar-w);
+  height: 100vh;
+  background: var(--primary);
+  color: #ecf0f1;
+  overflow-y: auto;
+  z-index: 200;
+}
+.sidebar-title {
+  padding: 18px 16px 10px;
+  font-size: 14px;
+  font-weight: 700;
+  border-bottom: 1px solid #2a6f97;
+  text-align: center;
+}
+.sidebar-nav { list-style: none; padding: 6px 0; }
+.sidebar-nav li {
+  padding: 9px 16px;
+  font-size: 12.5px;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: all 0.2s;
+}
+.sidebar-nav li:hover { background: #21618c; }
+.sidebar-nav li.active {
+  background: var(--primary-accent);
+  border-left-color: #fff;
+  font-weight: 700;
+}
+.sidebar-nav li.done {
+  color: #82e0aa;
+}
+.sidebar-nav li.done::before { content: "\2713 "; }
+
+/* メイン */
+.main {
+  margin-left: var(--sidebar-w);
+  min-height: 100vh;
+  padding-bottom: 80px;
+}
+
+/* ヘッダー */
+.top-bar {
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  padding: 14px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.top-bar h1 { font-size: 16px; color: var(--primary); }
+.patient-badge {
+  background: var(--primary-accent);
+  color: #fff;
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+}
+
+/* コンテンツ */
+.content { padding: 20px 28px; max-width: 900px; }
+.step { display: none; }
+.step.active { display: block; }
+
+/* セクションヘッダー */
+.section-hd {
+  background: var(--primary-accent);
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 8px 8px 0 0;
+  font-size: 15px;
+  font-weight: 700;
+  margin-top: 18px;
+}
+.section-desc {
+  background: #eaf2f8;
+  padding: 10px 18px;
+  font-size: 12.5px;
+  color: #555;
+  border-radius: 0 0 8px 8px;
+  margin-bottom: 12px;
+}
+
+/* カード */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 12px;
+}
+
+/* 質問 */
+.q-label { font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+
+/* ラジオ */
+.radio-group { display: flex; flex-direction: column; gap: 4px; }
+.radio-opt {
+  display: flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.15s;
+}
+.radio-opt:hover { background: #f0f4f8; }
+.radio-opt.selected { background: #d6eaf8; }
+.radio-opt input { margin-right: 8px; accent-color: var(--primary-accent); }
+
+/* チェックボックス */
+.check-opt {
+  display: flex;
+  align-items: center;
+  padding: 6px 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.check-opt input { margin-right: 8px; width: 16px; height: 16px; accent-color: var(--primary-accent); }
+
+/* 入力フィールド */
+.field-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.field-row label {
+  width: 140px;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: right;
+  padding-right: 10px;
+  flex-shrink: 0;
+}
+.field-row input, .field-row select {
+  padding: 7px 10px;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  width: 260px;
+  outline: none;
+}
+.field-row input:focus, .field-row select:focus { border-color: var(--primary-accent); }
+
+/* スコア表示 */
+.score-box {
+  background: #eaf2f8;
+  border: 1px solid #b8d4e8;
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin: 12px 0;
+}
+.score-val { font-size: 18px; font-weight: 700; color: var(--primary-accent); }
+.score-judge { font-size: 14px; font-weight: 600; margin-top: 4px; }
+
+.judge-normal { color: var(--success); }
+.judge-warning { color: var(--warning); }
+.judge-danger { color: var(--danger); }
+
+/* 患者データ取得バッジ */
+.patient-data-badge {
+  display: inline-block;
+  background: #d5f5e3;
+  color: #1e8449;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-left: 8px;
+}
+
+/* サマリーテーブル */
+.summary-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.summary-table th {
+  background: #d5e8f0;
+  padding: 8px 10px;
+  text-align: left;
+  font-weight: 600;
+}
+.summary-table td { padding: 7px 10px; border-bottom: 1px solid #eee; }
+
+/* ボタン */
+.btn {
+  padding: 10px 22px;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-sm { padding: 6px 14px; font-size: 12px; }
+.btn-primary { background: var(--primary-accent); color: #fff; }
+.btn-primary:hover { background: #2980b9; }
+.btn-success { background: var(--success); color: #fff; }
+.btn-success:hover { background: #229954; }
+.btn-secondary { background: #bdc3c7; color: #fff; }
+.btn-secondary:hover { background: #95a5a6; }
+.btn-calc { background: #8e44ad; color: #fff; }
+.btn-calc:hover { background: #7d3c98; }
+
+.nav-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+textarea {
+  width: 100%;
+  padding: 10px;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+/* ===== Mini-Cog 専用スタイル ===== */
+.mc-sub { display: none; }
+.mc-sub.mc-active { display: block; }
+
+.role-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 16px;
+  border-radius: 8px;
+  margin-bottom: 14px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.role-banner .role-icon { font-size: 22px; flex-shrink: 0; }
+.role-banner .role-sub { font-size: 11px; font-weight: 400; margin-top: 2px; opacity: 0.85; }
+.role-nurse { background: #eaf2fb; border: 2px solid #5b9bd5; color: #1a5276; }
+.role-patient { background: #fef5e7; border: 2px solid #f5b041; color: #7e5109; }
+.role-both { background: #eafaf1; border: 2px solid #58d68d; color: #1e8449; }
+
+.handoff-notice {
+  text-align: center;
+  background: linear-gradient(135deg, #f39c12, #e67e22);
+  color: #fff;
+  padding: 16px;
+  border-radius: 10px;
+  margin-bottom: 14px;
+}
+.handoff-notice .handoff-title { font-size: 16px; font-weight: 700; }
+.handoff-notice .handoff-desc { font-size: 12px; opacity: 0.9; margin-top: 3px; }
+
+.takeback-notice {
+  text-align: center;
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  color: #fff;
+  padding: 16px;
+  border-radius: 10px;
+  margin-bottom: 14px;
+}
+.takeback-notice .handoff-title { font-size: 16px; font-weight: 700; }
+.takeback-notice .handoff-desc { font-size: 12px; opacity: 0.9; margin-top: 3px; }
+
+.mc-word-display {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 16px 0;
+}
+.mc-word-chip {
+  background: var(--primary-accent);
+  color: #fff;
+  font-size: 20px;
+  font-weight: 700;
+  padding: 12px 24px;
+  border-radius: 14px;
+  box-shadow: 0 3px 10px rgba(52,152,219,0.3);
+}
+
+.mc-instruction {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.mc-instruction strong { color: #856404; }
+
+.mc-canvas-wrap { text-align: center; margin: 12px 0; }
+.mc-canvas-wrap canvas {
+  border: 3px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  touch-action: none;
+  cursor: crosshair;
+}
+.mc-canvas-controls {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+.mc-pen-sizes {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 6px 0;
+}
+.mc-pen-btn {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: #fff;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.mc-pen-btn.active { border-color: var(--primary-accent); background: #eaf2f8; }
+.mc-pen-dot { border-radius: 50%; background: #333; }
+
+.mc-timer-badge {
+  display: inline-block;
+  background: #fff3cd;
+  color: #856404;
+  font-size: 15px;
+  font-weight: 700;
+  padding: 6px 18px;
+  border-radius: 18px;
+  margin: 8px 0;
+}
+
+.mc-sub-nav {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.mc-progress {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-light);
+  margin-bottom: 12px;
+}
+
+.mc-cdt-guide {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin: 10px 0;
+}
+.mc-cdt-item {
+  background: #f8f9fa;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 12px;
+}
+.mc-cdt-item .chk { color: var(--success); font-weight: 700; }
+
+.mc-score-big {
+  font-size: 56px;
+  font-weight: 800;
+  text-align: center;
+  line-height: 1;
+}
+.mc-score-label {
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-light);
+  margin-top: 2px;
+}
+.mc-score-breakdown {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin: 14px 0;
+}
+.mc-score-item { text-align: center; }
+.mc-score-item .num { font-size: 24px; font-weight: 700; }
+.mc-score-item .lbl { font-size: 11px; color: var(--text-light); }
+
+.mc-judge-badge {
+  display: inline-block;
+  padding: 8px 20px;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+}
+.mc-judge-ok { background: var(--success); }
+.mc-judge-ng { background: var(--danger); }
+
+.mc-clock-thumb { margin: 12px auto; max-width: 220px; }
+.mc-clock-thumb img { width: 100%; border-radius: 10px; border: 2px solid var(--border); }
+
+.mc-radio-group { display: flex; flex-direction: column; gap: 5px; }
+.mc-radio-opt {
+  display: flex;
+  align-items: center;
+  background: #eaf2f8;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+.mc-radio-opt:hover { border-color: var(--primary-accent); }
+.mc-radio-opt.selected { border-color: var(--primary-accent); background: #d6eaf8; }
+.mc-radio-opt input[type="radio"] { width: 18px; height: 18px; margin-right: 10px; accent-color: var(--primary-accent); }
+
+.mc-wl-radio { display: flex; flex-direction: column; gap: 4px; }
+.mc-wl-opt {
+  display: flex; align-items: center;
+  padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px;
+  border: 2px solid transparent; transition: all 0.15s;
+}
+.mc-wl-opt:hover { background: #f0f4f8; }
+.mc-wl-opt.selected { border-color: var(--primary-accent); background: #d6eaf8; }
+.mc-wl-opt input { margin-right: 8px; accent-color: var(--primary-accent); }
+
+/* タッチ操作最適化 */
+input, select, textarea, button { font-size: 16px; }
+textarea { width: 100%; border: 1px solid var(--border); border-radius: 6px; padding: 10px; font-size: 14px; font-family: inherit; }
+
+/* === タブレット最適化 === */
+@media (max-width: 1024px) {
+  :root { --sidebar-w: 200px; }
+  .sidebar-nav li { padding: 12px 16px; font-size: 13px; min-height: 44px; display: flex; align-items: center; }
+  .content { padding: 16px 20px; }
+  .radio-opt { padding: 10px 12px; font-size: 14px; min-height: 44px; }
+  .check-opt { padding: 10px 12px; font-size: 14px; min-height: 44px; }
+  .check-opt input { width: 20px; height: 20px; }
+  .radio-opt input { width: 18px; height: 18px; }
+  .q-label { font-size: 14px; }
+  .field-row input, .field-row select { font-size: 16px; padding: 10px 12px; }
+  .field-row label { font-size: 14px; }
+  .btn { min-height: 48px; font-size: 15px; }
+  .section-hd { font-size: 16px; padding: 12px 18px; }
+}
+@media (max-width: 768px) {
+  :root { --sidebar-w: 0px; }
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    width: 240px;
+  }
+  .sidebar.open { transform: translateX(0); }
+  .main { margin-left: 0; }
+  .top-bar { padding: 10px 16px; }
+  .content { padding: 12px 16px; }
+  .field-row { flex-direction: column; align-items: flex-start; }
+  .field-row label { width: auto; text-align: left; padding-right: 0; margin-bottom: 4px; }
+  .field-row input, .field-row select { width: 100%; }
+  .menu-toggle { display: block !important; }
+}
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 199;
+}
+.sidebar.open + .sidebar-backdrop,
+.sidebar.open ~ .sidebar-backdrop { display: block; }
+</style>
+</head>
+<body>
+
+<!-- サイドバー -->
+<div class="sidebar">
+  <div class="sidebar-title">術前評価（看護師用）</div>
+  <ul class="sidebar-nav" id="sidebarNav"></ul>
+</div>
+
+<!-- メイン -->
+<div class="main">
+  <div class="top-bar">
+    <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')" style="display:none; background:none; border:none; font-size:24px; cursor:pointer; padding:4px 8px; color:var(--primary);">&#9776;</button>
+    <h1>看護師用 評価入力</h1>
+    <div>
+      <span class="patient-badge" id="topPatientId">患者未選択</span>
+    </div>
+  </div>
+  <div class="content" id="content"></div>
+</div>
+
+<script>
+// =========================================================================
+// ステップ定義
+// =========================================================================
+var STEPS = [
+  { id: 'info',    name: '1. 患者基本情報' },
+  { id: 'g8',      name: '2. G8' },
+  { id: 'cfs',     name: '3. CFS' },
+  { id: 'fried',   name: '4. 改訂J-CHS' },
+  { id: 'minicog', name: '5. Mini-Cog' },
+  { id: 'iadl',    name: '6. Lawton IADL' },
+  { id: 'summary', name: '7. 保存・確認' },
+];
+
+var currentStep = 0;
+var completedSteps = new Set();
+var nurseData = {};     // 看護師入力データ
+var patientData = null; // 患者入力データ（localStorageから読み込み）
+
+// =========================================================================
+// サイドバー
+// =========================================================================
+function buildSidebar() {
+  var nav = document.getElementById('sidebarNav');
+  nav.innerHTML = STEPS.map(function(s, i) {
+    return '<li data-idx="' + i + '" onclick="goStep(' + i + ')">' + s.name + '</li>';
+  }).join('');
+  updateSidebar();
+}
+
+function updateSidebar() {
+  document.querySelectorAll('.sidebar-nav li').forEach(function(li, i) {
+    li.classList.toggle('active', i === currentStep);
+    li.classList.toggle('done', completedSteps.has(i));
+  });
+}
+
+// =========================================================================
+// ステップ切り替え
+// =========================================================================
+function goStep(n) {
+  saveCurrentStep();
+  currentStep = n;
+  renderStep();
+  updateSidebar();
+  window.scrollTo({top: 0});
+}
+
+function nextStep() {
+  saveCurrentStep();
+  completedSteps.add(currentStep);
+  if (currentStep < STEPS.length - 1) {
+    currentStep++;
+    renderStep();
+    updateSidebar();
+    window.scrollTo({top: 0});
+  }
+}
+
+function prevStep() {
+  saveCurrentStep();
+  if (currentStep > 0) { currentStep--; renderStep(); updateSidebar(); window.scrollTo({top: 0}); }
+}
+
+// =========================================================================
+// データ保存・読み込み
+// =========================================================================
+function saveCurrentStep() {
+  // ラジオ
+  document.querySelectorAll('.radio-group[data-key]').forEach(function(g) {
+    var c = g.querySelector('input:checked');
+    if (c) nurseData[g.dataset.key] = c.value;
+  });
+  // チェックボックス
+  document.querySelectorAll('.check-opt input[type="checkbox"]').forEach(function(cb) {
+    nurseData[cb.dataset.key] = cb.checked ? 1 : 0;
+  });
+  // テキスト入力
+  document.querySelectorAll('input[data-key]').forEach(function(inp) {
+    nurseData[inp.dataset.key] = inp.value;
+  });
+  document.querySelectorAll('select[data-key]').forEach(function(sel) {
+    nurseData[sel.dataset.key] = sel.value;
+  });
+  // テキストエリア
+  document.querySelectorAll('textarea[data-key]').forEach(function(ta) {
+    nurseData[ta.dataset.key] = ta.value;
+  });
+}
+
+function loadPatientData(pid) {
+  var key = 'assessment_patient_' + pid;
+  var raw = localStorage.getItem(key);
+  if (raw) {
+    patientData = JSON.parse(raw);
+    return true;
+  }
+  patientData = null;
+  return false;
+}
+
+function getVal(key, fallback) {
+  if (nurseData[key] !== undefined && nurseData[key] !== '') return nurseData[key];
+  if (patientData && patientData[key] !== undefined && patientData[key] !== '') return patientData[key];
+  return fallback !== undefined ? fallback : '';
+}
+
+function isPatientVal(key) {
+  return patientData && patientData[key] !== undefined && patientData[key] !== ''
+    && (nurseData[key] === undefined || nurseData[key] === '');
+}
+
+// =========================================================================
+// HTML生成ヘルパー
+// =========================================================================
+function h_section(title, desc) {
+  return '<div class="section-hd">' + title + '</div>' +
+    (desc ? '<div class="section-desc">' + desc + '</div>' : '');
+}
+
+function h_field(key, label, opts) {
+  opts = opts || {};
+  var val = getVal(key, opts.def || '');
+  var badge = isPatientVal(key) ? '<span class="patient-data-badge">患者入力</span>' : '';
+  var type = opts.type || 'text';
+  var w = opts.width || '260px';
+  return '<div class="field-row">' +
+    '<label>' + label + badge + '</label>' +
+    '<input type="' + type + '" data-key="' + key + '" value="' + val + '" style="width:' + w + '"' +
+    (opts.placeholder ? ' placeholder="' + opts.placeholder + '"' : '') +
+    (opts.step ? ' step="' + opts.step + '"' : '') +
+    '></div>';
+}
+
+function h_radio(key, label, options) {
+  var curVal = getVal(key);
+  var badge = isPatientVal(key) ? '<span class="patient-data-badge">患者入力</span>' : '';
+  var html = '<div class="card"><div class="q-label">' + label + badge + '</div><div class="radio-group" data-key="' + key + '">';
+  for (var i = 0; i < options.length; i++) {
+    var text = options[i][0], val = options[i][1];
+    var checked = String(curVal) === String(val) ? 'checked' : '';
+    var sel = checked ? 'selected' : '';
+    html += '<label class="radio-opt ' + sel + '"><input type="radio" name="' + key + '" value="' + val + '" ' + checked + '>' + text + '</label>';
+  }
+  html += '</div></div>';
+  return html;
+}
+
+function h_check(key, text) {
+  var checked = getVal(key) == 1 ? 'checked' : '';
+  return '<label class="check-opt"><input type="checkbox" data-key="' + key + '" ' + checked + '>' + text + '</label>';
+}
+
+function h_score(id) {
+  return '<div class="score-box" id="score_' + id + '">' +
+    '<div class="score-val" id="scoreVal_' + id + '">スコア: 未計算</div>' +
+    '<div class="score-judge" id="scoreJudge_' + id + '"></div>' +
+    '<button class="btn btn-calc btn-sm" onclick="calcScore(\'' + id + '\')" style="margin-top:8px;">スコア計算</button>' +
+    '</div>';
+}
+
+function h_nav() {
+  var isLast = currentStep === STEPS.length - 1;
+  return '<div class="nav-bar">' +
+    '<button class="btn btn-secondary" onclick="prevStep()" ' + (currentStep === 0 ? 'disabled' : '') + '>&#9664; 前へ</button>' +
+    '<span style="font-size:12px; color:var(--text-light);">' + (currentStep + 1) + ' / ' + STEPS.length + '</span>' +
+    '<button class="btn ' + (isLast ? 'btn-success' : 'btn-primary') + '" onclick="nextStep()">' + (isLast ? '完了' : '次へ &#9654;') + '</button>' +
+    '</div>';
+}
+
+// =========================================================================
+// 各ステップのレンダリング
+// =========================================================================
+function renderStep() {
+  var el = document.getElementById('content');
+  var renderers = [
+    renderInfo, renderG8, renderCFS, renderFried,
+    renderMiniCog, renderIADL, renderSummary
+  ];
+  el.innerHTML = renderers[currentStep]() + h_nav();
+
+  // ラジオのスタイル
+  el.querySelectorAll('.radio-group input').forEach(function(r) {
+    r.addEventListener('change', function() {
+      this.closest('.radio-group').querySelectorAll('.radio-opt').forEach(function(o) { o.classList.remove('selected'); });
+      this.closest('.radio-opt').classList.add('selected');
+    });
+  });
+
+  // Mini-Cog ステップの場合、キャンバスとラジオを初期化
+  if (STEPS[currentStep].id === 'minicog') {
+    mcCanvasReady = false;
+    mcCanvas = null; mcCtx = null;
+    setTimeout(function(){ mcPostRender(); }, 50);
+  }
+}
+
+// ---- Step 0: 基本情報 ----
+function renderInfo() {
+  var html = h_section('患者基本情報', '患者IDを入力すると、患者様ご自身の回答データがあれば自動で読み込みます。');
+  html += '<div class="card">';
+  html += '<div class="field-row">' +
+    '<label>患者ID:</label>' +
+    '<div style="display:flex; align-items:center; gap:4px;">' +
+    '<span style="font-size:15px; font-weight:700; color:var(--primary);">10</span>' +
+    '<input type="text" data-key="patient_id" value="' + getVal('patient_id') + '" style="width:200px; padding:7px 10px; font-size:13px; border:1px solid var(--border); border-radius:6px;" placeholder="例: 12345">' +
+    '</div></div>';
+  html += '<button class="btn btn-primary btn-sm" onclick="tryLoadPatient()" style="margin:6px 0 12px 150px;">患者データ読込</button>';
+  html += '<div id="loadResult" style="margin:0 0 12px 150px; font-size:12px;"></div>';
+  html += h_field('patient_name', '患者氏名:', {placeholder: 'イニシャルで記入（例: T.Y.）'});
+  html += h_field('patient_age', '年齢:', {type: 'number', width: '100px'});
+
+  var sexVal = getVal('patient_sex');
+  html += '<div class="field-row"><label>性別:</label>' +
+    '<select data-key="patient_sex" style="width:120px;">' +
+    '<option value="">選択</option>' +
+    '<option value="M" ' + (sexVal==='M'?'selected':'') + '>男性</option>' +
+    '<option value="F" ' + (sexVal==='F'?'selected':'') + '>女性</option>' +
+    '</select></div>';
+
+  html += h_field('patient_height', '身長 (cm):', {type: 'number', width: '120px'});
+  html += h_field('patient_weight', '現在の体重 (kg):', {type: 'number', width: '120px'});
+  html += '<div class="field-row"><label>BMI:</label>' +
+    '<span id="bmiDisplay" style="font-weight:700; color:var(--primary-accent);">' + getVal('patient_bmi', '\u2015') + '</span></div>';
+  html += '</div>';
+
+  // 過去体重セクション
+  html += '<div class="section-hd" style="background:#8e44ad;">体重履歴（自動判定用）</div>';
+  html += '<div class="section-desc">現在の体重との差分から、体重変化項目を自動判定します。</div>';
+  html += '<div class="card">';
+  html += h_field('weight_3m', '3ヶ月前の体重 (kg):', {type: 'number', width: '120px'});
+  html += h_field('weight_6m', '半年前の体重 (kg):', {type: 'number', width: '120px'});
+  html += h_field('weight_1y', '1年前の体重 (kg):', {type: 'number', width: '120px'});
+  html += '<div id="weightCalcResult" style="margin-top:10px; font-size:12px; color:var(--text-light);"></div>';
+  html += '<button class="btn btn-calc btn-sm" onclick="calcWeightAndBMI()" style="margin-top:10px;">体重変化 &amp; BMI 自動計算</button>';
+  html += '<div id="autoFillResult" style="margin-top:8px; font-size:12px;"></div>';
+  html += '</div>';
+
+  html += h_field('assessment_date', '評価日:', {def: new Date().toISOString().slice(0,10)});
+
+  return html;
+}
+
+// ---- Step 1: G8（臨床観察分のみ） ----
+function renderG8() {
+  var html = h_section('G8スクリーニング（看護師観察分）', '看護師が臨床観察で評価する項目のみ。患者自己申告分（A, B, P）は患者入力から流用されます。');
+
+  html += h_radio('g8_c', 'C. 可動性（Mobility）', [
+    ['寝たきり/車椅子 (0)', 0], ['離床可・外出不可 (1)', 1], ['外出可能 (2)', 2]
+  ]);
+  html += h_radio('g8_e', 'E. 神経・精神的問題', [
+    ['重度認知症/うつ (0)', 0], ['中等度認知障害 (1)', 1], ['問題なし (2)', 2]
+  ]);
+  // H. 処方薬数（数値入力 → 自動で0/1判定）
+  var drugCount = getVal('g8_drug_count');
+  var g8hAuto = '';
+  if (drugCount !== '') {
+    var dc = parseInt(drugCount);
+    var g8h = dc >= 4 ? 0 : 1;
+    nurseData.g8_h = g8h;
+    g8hAuto = ' <span style="color:#8e44ad; font-size:11px;">\u2190 ' + dc + '種類 \u2192 ' + (g8h === 0 ? '4種以上: はい(0)' : '4種未満: いいえ(1)') + '</span>';
+  }
+  html += '<div class="card"><div class="q-label">H. 処方薬数' + g8hAuto + '</div>' +
+    '<div class="field-row" style="margin-top:8px;">' +
+    '<label>現在の処方薬数:</label>' +
+    '<div style="display:flex; align-items:center; gap:6px;">' +
+    '<input type="number" data-key="g8_drug_count" value="' + getVal('g8_drug_count') + '" style="width:80px; padding:7px 10px; font-size:13px; border:1px solid var(--border); border-radius:6px;" min="0" step="1" placeholder="例: 5">' +
+    '<span style="font-size:14px;">種類</span>' +
+    '</div></div>' +
+    '<div style="margin:4px 0 0 150px; font-size:11px; color:#7d3c98;">\u203B 4種類以上で G8 H項 = 0（はい）、4種類未満で 1（いいえ）と自動判定</div>' +
+    '</div>';
+
+  // G8 F(BMI)自動設定
+  var bmi = parseFloat(getVal('patient_bmi', 0));
+  if (bmi > 0) {
+    var g8f;
+    if (bmi < 19) g8f = 0;
+    else if (bmi < 21) g8f = 1;
+    else if (bmi < 23) g8f = 2;
+    else g8f = 3;
+    nurseData.g8_f = g8f;
+    var g8fLabels = {0:'19未満', 1:'19-21', 2:'21-23', 3:'23以上'};
+    html += '<div class="card"><div class="q-label">F. BMI区分 <span style="color:#8e44ad; font-size:11px;">\u2190 BMI ' + bmi + ' から自動設定: ' + g8fLabels[g8f] + ' (' + g8f + ')</span></div></div>';
+  }
+
+  // 年齢自動判定
+  var age = parseInt(getVal('patient_age', 0));
+  if (age > 0) {
+    var g8age;
+    if (age >= 86) g8age = 0;
+    else if (age >= 80) g8age = 1;
+    else g8age = 2;
+    nurseData.g8_age = g8age;
+    var ageLbl = {0:'86歳以上', 1:'80-85歳', 2:'80歳未満'};
+    html += '<div class="card"><div class="q-label">年齢区分 <span style="color:#8e44ad; font-size:11px;">\u2190 ' + age + '歳 \u2192 ' + ageLbl[g8age] + ' (' + g8age + ')</span></div></div>';
+  }
+
+  html += h_radio('cga_social', '社会的支援', [
+    ['十分（同居家族あり）', '十分'],
+    ['部分的（独居・近隣に支援者）', '部分的'],
+    ['不十分（独居・支援なし）', '不十分']
+  ]);
+
+  html += h_score('g8');
+  return html;
+}
+
+// ---- Step 2: CFS ----
+function renderCFS() {
+  var html = h_section('Clinical Frailty Scale (CFS)', '2週間前のベースラインの状態で評価。5点以上がフレイル。');
+  html += h_radio('cfs_score', '2週間前のベースラインの状態を選択', [
+    ['1: Very Fit - 非常に活動的、定期的運動', 1],
+    ['2: Well - 活動的だが定期的運動なし', 2],
+    ['3: Managing Well - 疾患コントロール良好、活動制限なし', 3],
+    ['4: Vulnerable - 動作が遅い、依存なし', 4],
+    ['5: Mildly Frail - IADL一部に介助必要', 5],
+    ['6: Moderately Frail - 入浴・屋外・階段に介助必要', 6],
+    ['7: Severely Frail - ADL全面介助', 7],
+    ['8: Very Severely Frail - 完全依存', 8],
+    ['9: Terminally Ill - 余命6ヶ月未満', 9],
+  ]);
+  html += h_score('cfs');
+  return html;
+}
+
+// ---- Step 3: 改訂J-CHS 計測項目 ----
+function renderFried() {
+  var html = h_section('改訂J-CHS基準（計測項目）', '看護師が計測する握力・歩行速度・下腿周囲長を入力してください。');
+
+  // 握力
+  var sex = getVal('patient_sex');
+  var gripR = parseFloat(getVal('fried_grip_r', 0));
+  var gripL = parseFloat(getVal('fried_grip_l', 0));
+  var gripMax = Math.max(gripR, gripL);
+  var gripAutoMsg = '';
+  if (gripMax > 0 && sex) {
+    var threshold = sex === 'M' ? 28 : 18;
+    var gripResult = gripMax < threshold ? 1 : 0;
+    nurseData.fried_grip = gripResult;
+    gripAutoMsg = ' <span style="color:#8e44ad; font-size:11px;">\u2190 自動判定: 最大' + gripMax + 'kg（' + (sex === 'M' ? '男性' : '女性') + '基準' + threshold + 'kg ' + (gripResult ? '未満\u2192該当' : '以上\u2192非該当') + '）</span>';
+  }
+  html += '<div class="card"><div class="q-label">握力' + gripAutoMsg + '</div>' +
+    '<div class="field-row" style="margin-top:8px;">' +
+    '<label>右手握力 (kg):</label>' +
+    '<input type="number" data-key="fried_grip_r" value="' + getVal('fried_grip_r') + '" style="width:100px; padding:7px 10px; font-size:13px; border:1px solid var(--border); border-radius:6px;" step="0.1">' +
+    '</div>' +
+    '<div class="field-row">' +
+    '<label>左手握力 (kg):</label>' +
+    '<input type="number" data-key="fried_grip_l" value="' + getVal('fried_grip_l') + '" style="width:100px; padding:7px 10px; font-size:13px; border:1px solid var(--border); border-radius:6px;" step="0.1">' +
+    '</div>' +
+    '<div id="gripJudge" style="margin:6px 0 0 150px; font-size:12px; font-weight:600;"></div>' +
+    '<div style="margin:4px 0 0 150px; font-size:11px; color:#7d3c98;">基準：男性 28kg未満、女性 18kg未満で該当（最大値で判定）</div>' +
+    '</div>';
+
+  // 歩行速度
+  var speed = parseFloat(getVal('fried_walk_speed', 0));
+  var walkAutoMsg = '';
+  if (speed > 0) {
+    var walkResult = speed < 1.0 ? 1 : 0;
+    nurseData.fried_walk = walkResult;
+    walkAutoMsg = ' <span style="color:#8e44ad; font-size:11px;">\u2190 自動判定: ' + speed + ' m/秒（' + (walkResult ? '該当' : '非該当') + '）</span>';
+  }
+  html += '<div class="card"><div class="q-label">歩行速度' + walkAutoMsg + '</div>' +
+    '<div class="field-row" style="margin-top:8px;">' +
+    '<label>歩行速度 (m/秒):</label>' +
+    '<input type="number" data-key="fried_walk_speed" value="' + getVal('fried_walk_speed') + '" style="width:120px; padding:7px 10px; font-size:13px; border:1px solid var(--border); border-radius:6px;" step="0.01" placeholder="例: 0.85">' +
+    '</div>' +
+    '<div id="walkJudge" style="margin:6px 0 0 150px; font-size:12px; font-weight:600;"></div>' +
+    '<div style="margin:4px 0 0 150px; font-size:11px; color:#7d3c98;">基準：1.0 m/秒未満で該当</div>' +
+    '</div>';
+
+  // 下腿周囲長
+  html += '<div class="card"><div class="q-label">下腿周囲長（GLIM用）</div>' +
+    '<div class="field-row" style="margin-top:8px;">' +
+    '<label>下腿周囲長 (cm):</label>' +
+    '<input type="number" data-key="glim_calf" value="' + getVal('glim_calf') + '" style="width:120px; padding:7px 10px; font-size:13px; border:1px solid var(--border); border-radius:6px;" step="0.1" placeholder="例: 31.5">' +
+    '</div>' +
+    '<div style="margin:4px 0 0 150px; font-size:11px; color:#7d3c98;">基準：男性 &lt; 34cm、女性 &lt; 33cm で骨格筋量減少と判定</div>' +
+    '</div>';
+
+  html += '<button class="btn btn-calc btn-sm" onclick="autoJudgeFried()" style="margin:12px 0;">自動判定を更新</button>';
+  html += '<div id="friedAutoResult" style="font-size:12px; margin-bottom:8px;"></div>';
+  return html;
+}
+
+// ---- Step 4: Mini-Cog（フル版） ----
+var MC_WORD_LISTS = [
+  { id: 1, words: ['バナナ', '日の出', '椅子'] },
+  { id: 2, words: ['娘', '天気', '台所'] },
+  { id: 3, words: ['村', '台所', '赤ちゃん'] },
+  { id: 4, words: ['川', '国', '指'] },
+  { id: 5, words: ['リーダー', '季節', 'テーブル'] },
+  { id: 6, words: ['大将', '庭', '帽子'] },
+];
+var MC_TARGET_TIME = '11時10分';
+
+var mcSub = 0;
+var mcCanvas, mcCtx, mcDrawing = false, mcPenSize = 3;
+var mcStrokeHistory = [];
+var mcTimerInterval = null, mcTimerSec = 0;
+var mcClockImage = '';
+var mcSelectedList = -1;
+var mcWords = [];
+
+function renderMiniCog() {
+  var html = h_section('Mini-Cog（認知機能スクリーニング）', '遅延再生(0-3点) + 時計描画(0 or 2点) = 5点満点。2点以下で認知機能低下疑い。');
+  mcSub = 0;
+
+  // --- Sub 0: 単語リスト選択 ---
+  html += '<div class="mc-sub mc-active" data-mc="0">';
+  html += '<div class="role-banner role-nurse">' +
+    '<div class="role-icon">&#x1F9D1;&#x200D;&#x2695;&#xFE0F;</div>' +
+    '<div>看護師が操作してください<div class="role-sub">単語リストを選んでから検査を開始します</div></div>' +
+    '</div>';
+  html += '<div class="card"><div class="q-label">単語リストの選択</div>' +
+    '<p style="font-size:12px;color:var(--text-light);margin-bottom:10px;">検査ごとに異なるリストを使用することが推奨されます。</p>' +
+    '<div class="mc-wl-radio" id="mcWordListGroup">';
+  MC_WORD_LISTS.forEach(function(list, i) {
+    var sel = mcSelectedList === i ? 'selected' : '';
+    var chk = mcSelectedList === i ? 'checked' : '';
+    html += '<label class="mc-wl-opt ' + sel + '"><input type="radio" name="mc_wl" value="' + i + '" ' + chk + '>リスト ' + list.id + ': ' + list.words.join('、') + '</label>';
+  });
+  html += '</div></div>';
+  html += '<div class="mc-sub-nav"><div></div><button class="btn btn-primary" onclick="mcStartTest()">検査を開始する &#9654;</button></div>';
+  html += '</div>';
+
+  // --- Sub 1: 単語登録 ---
+  html += '<div class="mc-sub" data-mc="1">';
+  html += '<div class="mc-progress">Mini-Cog ステップ 1 / 4</div>';
+  html += '<div class="role-banner role-nurse">' +
+    '<div class="role-icon">&#x1F9D1;&#x200D;&#x2695;&#xFE0F;</div>' +
+    '<div>看護師が操作してください<div class="role-sub">画面の単語を患者に読み上げます（画面は患者に見せないでください）</div></div>' +
+    '</div>';
+  html += '<div class="card">' +
+    '<div class="q-label">Step 1: 単語の登録</div>' +
+    '<div class="mc-instruction">' +
+    '<strong>検査者への指示：</strong><br>' +
+    '「これから3つの言葉を言います。よく聞いて覚えてください。あとで聞きますので。」<br>' +
+    'と伝えた後、以下の単語を1秒に1語のペースで読み上げてください。' +
+    '</div>' +
+    '<div class="mc-word-display" id="mcWordDisplay1"></div>' +
+    '</div>';
+  html += '<div class="mc-sub-nav">' +
+    '<button class="btn btn-secondary" onclick="mcGoSub(0)">&#9664; 戻る</button>' +
+    '<button class="btn btn-primary" onclick="mcGoSub(2)">登録完了 → 時計描画へ &#9654;</button>' +
+    '</div>';
+  html += '</div>';
+
+  // --- Sub 2: 時計描画 ---
+  html += '<div class="mc-sub" data-mc="2">';
+  html += '<div class="mc-progress">Mini-Cog ステップ 2 / 4</div>';
+  html += '<div class="role-banner role-nurse">' +
+    '<div class="role-icon">&#x1F9D1;&#x200D;&#x2695;&#xFE0F;</div>' +
+    '<div>まず看護師が指示を読み上げてください<div class="role-sub">指示を伝えたら、画面を患者に渡してください</div></div>' +
+    '</div>';
+  html += '<div class="card">' +
+    '<div class="q-label">Step 2: 時計描画テスト（CDT）</div>' +
+    '<div class="mc-instruction">' +
+    '<strong>検査者への指示：</strong><br>' +
+    '「時計の文字盤を描いてください。すべての数字を入れて、<span style="font-size:16px;color:var(--danger);font-weight:700;">' + MC_TARGET_TIME + '</span> を指す針も描いてください。」' +
+    '</div>' +
+    '<div style="text-align:center;">' +
+    '<div class="mc-timer-badge" id="mcTimerBadge">経過時間: 00:00</div>' +
+    '</div>' +
+    '</div>';
+  html += '<div class="handoff-notice">' +
+    '<div class="handoff-title">&#x1F449; ここから患者さんに画面を渡してください</div>' +
+    '<div class="handoff-desc">下の枠の中に時計を描いてもらいます</div>' +
+    '</div>';
+  html += '<div class="card">' +
+    '<div style="text-align:center;margin-bottom:8px;">' +
+    '<span style="font-size:17px;font-weight:700;color:#e67e22;">&#x1F464; 患者さんが操作</span><br>' +
+    '<span style="font-size:12px;color:var(--text-light);">下の丸い枠の中に、時計を描いてください</span>' +
+    '</div>' +
+    '<div class="mc-pen-sizes">' +
+    '<button class="mc-pen-btn active" onclick="mcSetPen(3,this)"><div class="mc-pen-dot" style="width:6px;height:6px;"></div></button>' +
+    '<button class="mc-pen-btn" onclick="mcSetPen(5,this)"><div class="mc-pen-dot" style="width:10px;height:10px;"></div></button>' +
+    '<button class="mc-pen-btn" onclick="mcSetPen(8,this)"><div class="mc-pen-dot" style="width:16px;height:16px;"></div></button>' +
+    '</div>' +
+    '<div class="mc-canvas-wrap">' +
+    '<canvas id="mcClockCanvas" width="600" height="600" style="width:280px;height:280px;"></canvas>' +
+    '</div>' +
+    '<div class="mc-canvas-controls">' +
+    '<button class="btn btn-secondary btn-sm" onclick="mcUndo()">元に戻す</button>' +
+    '<button class="btn btn-sm" style="background:var(--danger);color:#fff;" onclick="mcClear()">全消去</button>' +
+    '</div>' +
+    '</div>';
+  html += '<div class="takeback-notice">' +
+    '<div class="handoff-title">&#x1F9D1;&#x200D;&#x2695;&#xFE0F; 描画が終わったら、看護師が画面を受け取ってください</div>' +
+    '<div class="handoff-desc">「描画完了」ボタンは看護師が押してください</div>' +
+    '</div>';
+  html += '<div class="mc-sub-nav">' +
+    '<button class="btn btn-secondary" onclick="mcGoSub(1)">&#9664; 戻る</button>' +
+    '<button class="btn btn-primary" onclick="mcFinishDraw()">描画完了 → 再生テストへ &#9654;</button>' +
+    '</div>';
+  html += '</div>';
+
+  // --- Sub 3: 遅延再生 ---
+  html += '<div class="mc-sub" data-mc="3">';
+  html += '<div class="mc-progress">Mini-Cog ステップ 3 / 4</div>';
+  html += '<div class="role-banner role-nurse">' +
+    '<div class="role-icon">&#x1F9D1;&#x200D;&#x2695;&#xFE0F;</div>' +
+    '<div>看護師が操作してください<div class="role-sub">患者に質問し、回答を記録します</div></div>' +
+    '</div>';
+  html += '<div class="card">' +
+    '<div class="q-label">Step 3: 単語の遅延再生</div>' +
+    '<div class="mc-instruction">' +
+    '<strong>検査者への指示：</strong><br>' +
+    '「先ほど覚えていただいた3つの言葉は何でしたか？」と質問してください。<br>' +
+    'ヒントは出さず、患者が自発的に答えた単語のみを評価します。' +
+    '</div>' +
+    '<div class="mc-word-display" id="mcWordDisplay3"></div>' +
+    '</div>';
+  html += '<div class="card"><div class="q-label">正しく思い出せた単語の数</div>' +
+    '<div class="mc-radio-group" id="mcRecallGroup">' +
+    '<label class="mc-radio-opt"><input type="radio" name="mc_recall" value="0">0語 \u2014 1つも思い出せなかった</label>' +
+    '<label class="mc-radio-opt"><input type="radio" name="mc_recall" value="1">1語 \u2014 1つだけ正解</label>' +
+    '<label class="mc-radio-opt"><input type="radio" name="mc_recall" value="2">2語 \u2014 2つ正解</label>' +
+    '<label class="mc-radio-opt"><input type="radio" name="mc_recall" value="3">3語 \u2014 すべて正解</label>' +
+    '</div></div>';
+  html += '<div class="mc-sub-nav">' +
+    '<button class="btn btn-secondary" onclick="mcGoSub(2)">&#9664; 戻る</button>' +
+    '<button class="btn btn-primary" onclick="mcGoSub(4)">次へ → CDT採点 &#9654;</button>' +
+    '</div>';
+  html += '</div>';
+
+  // --- Sub 4: CDT採点 ---
+  html += '<div class="mc-sub" data-mc="4">';
+  html += '<div class="mc-progress">Mini-Cog ステップ 4 / 4</div>';
+  html += '<div class="role-banner role-nurse">' +
+    '<div class="role-icon">&#x1F9D1;&#x200D;&#x2695;&#xFE0F;</div>' +
+    '<div>看護師が操作してください<div class="role-sub">時計描画を確認し、採点基準に基づいて判定します</div></div>' +
+    '</div>';
+  html += '<div class="card">' +
+    '<div class="q-label">患者の描画</div>' +
+    '<div class="mc-clock-thumb"><img id="mcClockPreview" src="" alt="時計の描画"></div>' +
+    '</div>';
+  html += '<div class="card">' +
+    '<div class="q-label">CDT採点基準</div>' +
+    '<p style="font-size:12px;color:var(--text-light);margin-bottom:8px;">以下の4項目をすべて満たしていれば「正常」と判定します。</p>' +
+    '<div class="mc-cdt-guide">' +
+    '<div class="mc-cdt-item"><span class="chk">\u2713</span> 1〜12の数字がすべてある</div>' +
+    '<div class="mc-cdt-item"><span class="chk">\u2713</span> 数字がほぼ正しい位置にある</div>' +
+    '<div class="mc-cdt-item"><span class="chk">\u2713</span> 2本の針がある</div>' +
+    '<div class="mc-cdt-item"><span class="chk">\u2713</span> 正しい時刻を指している</div>' +
+    '</div></div>';
+  html += '<div class="card"><div class="q-label">時計描画テストの判定</div>' +
+    '<div class="mc-radio-group" id="mcCdtGroup">' +
+    '<label class="mc-radio-opt"><input type="radio" name="mc_cdt" value="2">正常（2点） \u2014 上記基準をすべて満たす</label>' +
+    '<label class="mc-radio-opt"><input type="radio" name="mc_cdt" value="0">異常（0点） \u2014 1つ以上の基準を満たさない</label>' +
+    '</div></div>';
+  html += '<div class="mc-sub-nav">' +
+    '<button class="btn btn-secondary" onclick="mcGoSub(3)">&#9664; 戻る</button>' +
+    '<button class="btn btn-success" onclick="mcShowResult()">結果を表示</button>' +
+    '</div>';
+  html += '</div>';
+
+  // --- Sub 5: 結果 ---
+  html += '<div class="mc-sub" data-mc="5">';
+  html += '<div class="role-banner role-both">' +
+    '<div class="role-icon">&#x1F4CB;</div>' +
+    '<div>Mini-Cog 検査結果<div class="role-sub">看護師が確認してください。「次へ」で他の評価項目へ進みます。</div></div>' +
+    '</div>';
+  html += '<div class="card" id="mcResultCard"></div>';
+  html += '<div class="card" id="mcResultDetail"></div>';
+  html += '<div class="mc-sub-nav">' +
+    '<button class="btn btn-secondary" onclick="mcGoSub(4)">&#9664; 採点に戻る</button>' +
+    '<button class="btn btn-primary" onclick="mcRestart()">もう一度検査</button>' +
+    '</div>';
+  html += '</div>';
+
+  return html;
+}
+
+// === Mini-Cog サブステップ管理 ===
+function mcGoSub(n) {
+  // タイマー管理
+  if (n === 2 && mcSub !== 2) mcStartTimer();
+  else if (mcSub === 2 && n !== 2) mcStopTimer();
+
+  document.querySelectorAll('.mc-sub').forEach(function(s) { s.classList.remove('mc-active'); });
+  var el = document.querySelector('.mc-sub[data-mc="' + n + '"]');
+  if (el) el.classList.add('mc-active');
+  mcSub = n;
+
+  if (n === 1) {
+    document.getElementById('mcWordDisplay1').innerHTML =
+      mcWords.map(function(w) { return '<span class="mc-word-chip">' + w + '</span>'; }).join('');
+  }
+  if (n === 2) {
+    if (!mcCanvas || !mcCanvas.getContext) mcInitCanvas();
+  }
+  if (n === 3) {
+    document.getElementById('mcWordDisplay3').innerHTML =
+      mcWords.map(function(w) { return '<span class="mc-word-chip">' + w + '</span>'; }).join('');
+  }
+  if (n === 4) {
+    document.getElementById('mcClockPreview').src = mcClockImage || (mcCanvas ? mcCanvas.toDataURL() : '');
+  }
+
+  var sectionHd = document.querySelector('.section-hd');
+  if (sectionHd) window.scrollTo({top: sectionHd.offsetTop - 60});
+}
+
+function mcPostRender() {
+  // ラジオスタイル
+  document.querySelectorAll('.mc-radio-group input, .mc-wl-radio input').forEach(function(r) {
+    r.addEventListener('change', function() {
+      var grp = this.closest('.mc-radio-group') || this.closest('.mc-wl-radio');
+      if (grp) {
+        grp.querySelectorAll('.mc-radio-opt, .mc-wl-opt').forEach(function(o) { o.classList.remove('selected'); });
+        this.closest('.mc-radio-opt, .mc-wl-opt').classList.add('selected');
+      }
+    });
+  });
+  mcCanvas = null; mcCtx = null;
+}
+
+function mcStartTest() {
+  var checked = document.querySelector('input[name="mc_wl"]:checked');
+  if (!checked) { alert('単語リストを選択してください。'); return; }
+  mcSelectedList = parseInt(checked.value);
+  mcWords = MC_WORD_LISTS[mcSelectedList].words.slice();
+  mcTimerSec = 0;
+  mcClear();
+  mcGoSub(1);
+}
+
+// === キャンバス ===
+var mcCanvasReady = false;
+function mcInitCanvas() {
+  mcCanvas = document.getElementById('mcClockCanvas');
+  if (!mcCanvas) return;
+  mcCtx = mcCanvas.getContext('2d');
+  var dpr = window.devicePixelRatio || 1;
+  var size = 280;
+  mcCanvas.width = size * dpr;
+  mcCanvas.height = size * dpr;
+  mcCanvas.style.width = size + 'px';
+  mcCanvas.style.height = size + 'px';
+  mcCtx.scale(dpr, dpr);
+  mcDrawBase();
+  mcStrokeHistory = [];
+  mcSaveStroke();
+
+  if (!mcCanvasReady) {
+    mcCanvas.addEventListener('mousedown', mcOnStart);
+    mcCanvas.addEventListener('mousemove', mcOnMove);
+    mcCanvas.addEventListener('mouseup', mcOnEnd);
+    mcCanvas.addEventListener('mouseleave', mcOnEnd);
+    mcCanvas.addEventListener('touchstart', function(e) { e.preventDefault(); mcOnStart({clientX: e.touches[0].clientX, clientY: e.touches[0].clientY}); }, {passive:false});
+    mcCanvas.addEventListener('touchmove', function(e) { e.preventDefault(); mcOnMove({clientX: e.touches[0].clientX, clientY: e.touches[0].clientY}); }, {passive:false});
+    mcCanvas.addEventListener('touchend', mcOnEnd);
+    mcCanvasReady = true;
+  }
+}
+
+function mcDrawBase() {
+  var s = 280, cx = s/2, cy = s/2, r = s/2 - 14;
+  mcCtx.clearRect(0, 0, s, s);
+  mcCtx.beginPath();
+  mcCtx.arc(cx, cy, r, 0, Math.PI*2);
+  mcCtx.strokeStyle = '#ccc';
+  mcCtx.lineWidth = 2;
+  mcCtx.stroke();
+  mcCtx.beginPath();
+  mcCtx.arc(cx, cy, 3, 0, Math.PI*2);
+  mcCtx.fillStyle = '#ccc';
+  mcCtx.fill();
+}
+
+function mcGetPos(e) {
+  var r = mcCanvas.getBoundingClientRect();
+  return { x: e.clientX - r.left, y: e.clientY - r.top };
+}
+function mcOnStart(e) {
+  mcDrawing = true;
+  var p = mcGetPos(e);
+  mcCtx.beginPath();
+  mcCtx.moveTo(p.x, p.y);
+  mcCtx.strokeStyle = '#000';
+  mcCtx.lineWidth = mcPenSize;
+  mcCtx.lineCap = 'round';
+  mcCtx.lineJoin = 'round';
+}
+function mcOnMove(e) {
+  if (!mcDrawing) return;
+  var p = mcGetPos(e);
+  mcCtx.lineTo(p.x, p.y);
+  mcCtx.stroke();
+}
+function mcOnEnd() {
+  if (mcDrawing) { mcDrawing = false; mcSaveStroke(); }
+}
+function mcSaveStroke() {
+  mcStrokeHistory.push(mcCtx.getImageData(0, 0, mcCanvas.width, mcCanvas.height));
+  if (mcStrokeHistory.length > 50) mcStrokeHistory.shift();
+}
+function mcUndo() {
+  if (mcStrokeHistory.length > 1) {
+    mcStrokeHistory.pop();
+    mcCtx.putImageData(mcStrokeHistory[mcStrokeHistory.length - 1], 0, 0);
+  }
+}
+function mcClear() {
+  if (!mcCanvas) return;
+  var dpr = window.devicePixelRatio || 1;
+  mcCtx.setTransform(1, 0, 0, 1, 0, 0);
+  mcCtx.clearRect(0, 0, mcCanvas.width, mcCanvas.height);
+  mcCtx.scale(dpr, dpr);
+  mcDrawBase();
+  mcStrokeHistory = [];
+  mcSaveStroke();
+}
+function mcSetPen(size, btn) {
+  mcPenSize = size;
+  document.querySelectorAll('.mc-pen-btn').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+}
+function mcFinishDraw() {
+  if (mcCanvas) mcClockImage = mcCanvas.toDataURL('image/png');
+  mcGoSub(3);
+}
+
+// === タイマー ===
+function mcStartTimer() {
+  mcStopTimer();
+  mcUpdateTimer();
+  mcTimerInterval = setInterval(function() { mcTimerSec++; mcUpdateTimer(); }, 1000);
+}
+function mcStopTimer() {
+  if (mcTimerInterval) { clearInterval(mcTimerInterval); mcTimerInterval = null; }
+}
+function mcUpdateTimer() {
+  var m = Math.floor(mcTimerSec / 60), s = mcTimerSec % 60;
+  var el = document.getElementById('mcTimerBadge');
+  if (el) el.textContent = '経過時間: ' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+}
+
+// === 結果表示 ===
+function mcShowResult() {
+  var recallEl = document.querySelector('input[name="mc_recall"]:checked');
+  var cdtEl = document.querySelector('input[name="mc_cdt"]:checked');
+  if (!recallEl) { alert('遅延再生のスコアを選択してください。'); return; }
+  if (!cdtEl) { alert('時計描画テストの判定を選択してください。'); return; }
+
+  var recall = parseInt(recallEl.value);
+  var cdt = parseInt(cdtEl.value);
+  var total = recall + cdt;
+  var impaired = total <= 2;
+  var color = impaired ? 'var(--danger)' : 'var(--success)';
+  var judgeText = impaired ? '認知機能低下の疑いあり' : '認知機能低下の疑いなし';
+  var badgeClass = impaired ? 'mc-judge-ng' : 'mc-judge-ok';
+
+  // nurseDataに反映
+  nurseData.minicog_recall = String(recall);
+  nurseData.minicog_clock = String(cdt);
+  nurseData._minicog_score = total;
+  nurseData._minicog_judge = impaired ? '認知機能低下疑い' : (total <= 3 ? '境界域' : '正常');
+
+  document.getElementById('mcResultCard').innerHTML =
+    '<div class="mc-score-big" style="color:' + color + ';">' + total + '</div>' +
+    '<div class="mc-score-label">/ 5点</div>' +
+    '<div class="mc-score-breakdown">' +
+    '<div class="mc-score-item"><div class="num">' + recall + '</div><div class="lbl">遅延再生 (0-3)</div></div>' +
+    '<div class="mc-score-item"><div class="num">' + cdt + '</div><div class="lbl">時計描画 (0 or 2)</div></div>' +
+    '</div>' +
+    '<div style="text-align:center;"><span class="mc-judge-badge ' + badgeClass + '">' + judgeText + '</span></div>';
+
+  var m = Math.floor(mcTimerSec / 60), s = mcTimerSec % 60;
+  document.getElementById('mcResultDetail').innerHTML =
+    '<div class="q-label">検査詳細</div>' +
+    '<table style="width:100%;font-size:13px;border-collapse:collapse;margin-top:8px;">' +
+    '<tr style="border-bottom:1px solid #eee;"><td style="padding:6px;color:#888;">使用単語リスト</td><td style="padding:6px;">リスト' + MC_WORD_LISTS[mcSelectedList].id + ': ' + mcWords.join('、') + '</td></tr>' +
+    '<tr style="border-bottom:1px solid #eee;"><td style="padding:6px;color:#888;">描画所要時間</td><td style="padding:6px;">' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0') + '</td></tr>' +
+    '<tr style="border-bottom:1px solid #eee;"><td style="padding:6px;color:#888;">遅延再生スコア</td><td style="padding:6px;">' + recall + ' / 3</td></tr>' +
+    '<tr><td style="padding:6px;color:#888;">時計描画テスト</td><td style="padding:6px;">' + (cdt === 2 ? '正常 (2点)' : '異常 (0点)') + '</td></tr>' +
+    '</table>' +
+    (mcClockImage ? '<div class="mc-clock-thumb" style="margin-top:12px;"><div class="q-label" style="text-align:center;">時計描画</div><img src="' + mcClockImage + '" alt="時計描画"></div>' : '') +
+    '<div style="background:#eaf2f8;border-radius:6px;padding:10px 14px;margin-top:12px;font-size:12px;line-height:1.7;">' +
+    '<strong>判定基準：</strong> 合計 0〜2点 → 認知機能低下の疑いあり / 合計 3〜5点 → 疑いなし' +
+    '</div>';
+
+  mcGoSub(5);
+}
+
+function mcRestart() {
+  mcSelectedList = -1;
+  mcWords = [];
+  mcClockImage = '';
+  mcTimerSec = 0;
+  mcStopTimer();
+  mcClear();
+  document.querySelectorAll('.mc-sub input[type="radio"]').forEach(function(r) { r.checked = false; });
+  document.querySelectorAll('.mc-sub .mc-radio-opt, .mc-sub .mc-wl-opt').forEach(function(o) { o.classList.remove('selected'); });
+  mcGoSub(0);
+}
+
+// ---- Step 5: mFI-5 ----
+function renderIADL() {
+  var html = h_section('Lawton IADL（確認用）', '患者様の回答がある場合は自動で読み込まれます。看護師の確認・修正が可能です。');
+
+  // 患者データがある場合の表示
+  if (patientData && patientData.iadl_0 !== undefined) {
+    html += '<div class="card" style="background:#d5f5e3; border-left:4px solid #27ae60;">' +
+      '<div class="q-label" style="color:#1e8449;">患者様の回答データが読み込まれています</div>' +
+      '<p style="font-size:12px; color:#555;">内容を確認し、必要に応じて修正してください。</p></div>';
+  } else {
+    html += '<div class="card" style="background:#fdebd0; border-left:4px solid #f39c12;">' +
+      '<div class="q-label" style="color:#e67e22;">患者様の回答データがありません</div>' +
+      '<p style="font-size:12px; color:#555;">看護師が直接聞き取りを行い、入力してください。</p></div>';
+  }
+
+  var iadlItems = [
+    { key: 'iadl_0', label: 'A. 電話を使うこと', opts: [
+      ['自分で番号を調べて電話をかけることが出来る', '1'],
+      ['2, 3のよく知っている番号であればかけることが出来る', '1a'],
+      ['電話には出られるが自分からかけることは出来ない', '1b'],
+      ['全く電話を使用出来ない', '0']
+    ]},
+    { key: 'iadl_1', label: 'B. 買い物', opts: [
+      ['すべての買い物を自分で行うことが出来る', '1'],
+      ['少額の買い物は自分で行うことが出来る', '0'],
+      ['誰かが一緒でないと買い物が出来ない', '0a'],
+      ['全く買い物は出来ない', '0b']
+    ]},
+    { key: 'iadl_2', label: 'C. 食事の支度', opts: [
+      ['自分で考えてきちんと食事の支度をすることが出来る', '1'],
+      ['材料が用意されれば適切な食事の支度をすることが出来る', '0'],
+      ['温めることは出来るが、きちんとした食事をいつも作ることは出来ない', '0a'],
+      ['食事の支度をしてもらう必要がある', '0b']
+    ]},
+    { key: 'iadl_3', label: 'D. 家事', opts: [
+      ['力仕事以外の家事を1人でこなすことが出来る', '1'],
+      ['皿洗いやベッドの支度などの簡単な家事は出来る', '1a'],
+      ['簡単な家事はできるが、きちんと清潔さを保つことが出来ない', '1b'],
+      ['全ての家事に手助けを必要とする', '1c'],
+      ['全く家事は出来ない', '0']
+    ]},
+    { key: 'iadl_4', label: 'E. 洗濯', opts: [
+      ['自分の洗濯は全て自分で行うことが出来る', '1'],
+      ['靴下などの小物の洗濯を行うことは出来る', '1a'],
+      ['洗濯は他の人にしてもらう必要がある', '0']
+    ]},
+    { key: 'iadl_5', label: 'F. 外出の方法', opts: [
+      ['1人で公共交通機関を利用し、あるいは自家用車で外出することが出来る', '1'],
+      ['1人でタクシーは利用出来るが、その他の公共交通機関は利用出来ない', '1a'],
+      ['付き添いが一緒なら、公共交通機関を利用し外出することが出来る', '1b'],
+      ['付き添いが一緒であれば、タクシーか自家用車で外出することが出来る', '0'],
+      ['全く外出することが出来ない', '0a']
+    ]},
+    { key: 'iadl_6', label: 'G. お薬の管理', opts: [
+      ['自分で正しい時に正しい量の薬を飲むことが出来る', '1'],
+      ['前もって薬が仕分けされていれば、自分で飲むことが出来る', '0'],
+      ['自分で薬を管理することが出来ない', '0a']
+    ]},
+    { key: 'iadl_7', label: 'H. お金の管理', opts: [
+      ['家計を自分で管理出来る（支払い計画・実施、銀行へ行くこと等）', '1'],
+      ['日々の支払いは出来るが、預金の出し入れや大きな買い物等では手助けが必要', '1a'],
+      ['お金の取り扱いを行うことが出来ない', '0']
+    ]}
+  ];
+
+  for (var i = 0; i < iadlItems.length; i++) {
+    var item = iadlItems[i];
+    var curVal = getVal(item.key);
+    var badge = '';
+    if (patientData && patientData[item.key] !== undefined && patientData[item.key] !== '' &&
+        (nurseData[item.key] === undefined || nurseData[item.key] === '')) {
+      badge = ' <span style="display:inline-block;background:#d5f5e3;color:#1e8449;font-size:10px;padding:1px 6px;border-radius:8px;">患者回答</span>';
+    }
+    html += '<div class="card"><div class="q-label">' + item.label + badge + '</div>';
+    html += '<div class="radio-group" data-key="' + item.key + '">';
+    for (var j = 0; j < item.opts.length; j++) {
+      var text = item.opts[j][0];
+      var val = item.opts[j][1];
+      var checked = String(curVal) === String(val) ? 'checked' : '';
+      var sel = checked ? 'selected' : '';
+      html += '<label class="radio-opt ' + sel + '"><input type="radio" name="' + item.key + '" value="' + val + '" ' + checked + '>' + text + '</label>';
+    }
+    html += '</div></div>';
+  }
+
+  html += h_score('iadl');
+  return html;
+}
+
+// ---- Step 6: 保存・確認 ----
+function renderSummary() {
+  saveCurrentStep();
+  recalcAll();
+
+  var html = h_section('入力データ確認・保存', '入力内容を確認し、保存ボタンでlocalStorageに保存します。');
+
+  var sex = getVal('patient_sex') === 'M' ? '男性' : getVal('patient_sex') === 'F' ? '女性' : '-';
+  html += '<div class="card"><div class="q-label">【患者情報】</div>';
+  html += '<table class="summary-table">' +
+    '<tr><td>患者ID</td><td><strong>10' + getVal('patient_id', '-') + '</strong></td><td>氏名</td><td>' + getVal('patient_name', '-') + '</td></tr>' +
+    '<tr><td>年齢</td><td>' + getVal('patient_age', '-') + '歳</td><td>性別</td><td>' + sex + '</td></tr>' +
+    '<tr><td>身長</td><td>' + getVal('patient_height', '-') + ' cm</td><td>BMI</td><td>' + getVal('patient_bmi', '-') + ' kg/m\u00B2</td></tr>' +
+    '<tr><td>現体重</td><td>' + getVal('patient_weight', '-') + ' kg</td><td>3ヶ月前</td><td>' + getVal('weight_3m', '-') + ' kg</td></tr>' +
+    '<tr><td>半年前</td><td>' + getVal('weight_6m', '-') + ' kg</td><td>1年前</td><td>' + getVal('weight_1y', '-') + ' kg</td></tr>' +
+    '<tr><td>評価日</td><td>' + getVal('assessment_date', '-') + '</td><td>社会的支援</td><td>' + getVal('cga_social', '-') + '</td></tr>' +
+    '</table></div>';
+
+  // G8
+  html += '<div class="card"><div class="q-label">【G8（看護師観察分）】</div>';
+  html += '<table class="summary-table">' +
+    '<tr><td>C. 可動性</td><td>' + getVal('g8_c', '-') + '</td></tr>' +
+    '<tr><td>E. 神経精神</td><td>' + getVal('g8_e', '-') + '</td></tr>' +
+    '<tr><td>H. 処方薬数</td><td>' + (getVal('g8_drug_count') ? getVal('g8_drug_count') + '種類（G8 H=' + getVal('g8_h', '-') + '）' : '-') + '</td></tr>' +
+    '<tr><td>F. BMI区分（自動）</td><td>' + getVal('g8_f', '-') + '</td></tr>' +
+    '<tr><td>年齢区分（自動）</td><td>' + getVal('g8_age', '-') + '</td></tr>' +
+    '</table></div>';
+
+  // CFS
+  html += '<div class="card"><div class="q-label">【CFS】</div>' +
+    '<p style="font-size:13px;">スコア: <strong>' + getVal('cfs_score', '-') + '</strong> / 9</p></div>';
+
+  // 計測項目
+  html += '<div class="card"><div class="q-label">【計測項目（改訂J-CHS）】</div>';
+  html += '<table class="summary-table">' +
+    '<tr><td>右手握力</td><td>' + getVal('fried_grip_r', '-') + ' kg</td></tr>' +
+    '<tr><td>左手握力</td><td>' + getVal('fried_grip_l', '-') + ' kg</td></tr>' +
+    '<tr><td>握力判定</td><td>' + (nurseData.fried_grip !== undefined ? (nurseData.fried_grip == 1 ? '該当' : '非該当') : '-') + '</td></tr>' +
+    '<tr><td>歩行速度</td><td>' + getVal('fried_walk_speed', '-') + ' m/秒</td></tr>' +
+    '<tr><td>歩行速度判定</td><td>' + (nurseData.fried_walk !== undefined ? (nurseData.fried_walk == 1 ? '該当' : '非該当') : '-') + '</td></tr>' +
+    '<tr><td>下腿周囲長</td><td>' + getVal('glim_calf', '-') + ' cm</td></tr>' +
+    '</table></div>';
+
+  // Mini-Cog
+  html += '<div class="card"><div class="q-label">【Mini-Cog】</div>';
+  if (nurseData._minicog_score !== undefined) {
+    var jClass = judgeCls(nurseData._minicog_judge);
+    html += '<p style="font-size:13px;">スコア: <strong>' + nurseData._minicog_score + '</strong> / 5</p>' +
+      '<p style="font-size:13px;" class="' + jClass + '">判定: <strong>' + nurseData._minicog_judge + '</strong></p>';
+  } else {
+    html += '<p style="font-size:13px; color:var(--text-light);">未実施</p>';
+  }
+  html += '</div>';
+
+  // IADL
+  var iadlLabels = ['A.電話','B.買い物','C.食事の支度','D.家事','E.洗濯','F.外出','G.服薬管理','H.金銭管理'];
+  html += '<div class="card"><div class="q-label">【Lawton IADL】</div>';
+  html += '<table class="summary-table">';
+  for (var ii = 0; ii < 8; ii++) {
+    var iv = getVal('iadl_' + ii, '-');
+    var iscore = (iv !== '-' && iv !== '') ? parseFloat(iv) : '-';
+    html += '<tr><td>' + iadlLabels[ii] + '</td><td>' + (iscore !== '-' ? iscore + '点' : '未回答') + '</td></tr>';
+  }
+  html += '</table>';
+  if (nurseData._iadl_score !== undefined) {
+    var iadlJClass = judgeCls(nurseData._iadl_judge);
+    html += '<p style="font-size:13px; margin-top:8px;">スコア: <strong>' + nurseData._iadl_score + '</strong> / 8 <span class="' + iadlJClass + '" style="font-weight:600;">' + nurseData._iadl_judge + '</span></p>';
+  }
+  html += '</div>';
+
+  // 保存ボタン
+  html += '<div style="text-align:center; margin-top:20px;">' +
+    '<button class="btn btn-success" onclick="saveToLocalStorage()" style="padding:14px 40px; font-size:15px;">保存</button>' +
+    '</div>';
+  html += '<div id="saveResult" style="text-align:center; margin-top:12px; font-size:14px;"></div>';
+
+  return html;
+}
+
+// =========================================================================
+// 判定クラス
+// =========================================================================
+function judgeCls(j) {
+  if (!j) return '';
+  var danger = ['脆弱（異常）','フレイル','重度フレイル','低栄養','認知機能低下疑い','重度低下','高リスク','GLIM低栄養'];
+  var warn = ['プレフレイル','低栄養のおそれ','境界域','中等度低下','中リスク'];
+  if (danger.indexOf(j) >= 0) return 'judge-danger';
+  if (warn.indexOf(j) >= 0) return 'judge-warning';
+  return 'judge-normal';
+}
+
+// =========================================================================
+// スコア計算
+// =========================================================================
+function calcScore(id) {
+  saveCurrentStep();
+  var valEl = document.getElementById('scoreVal_' + id);
+  var judgeEl = document.getElementById('scoreJudge_' + id);
+  if (!valEl) return;
+
+  try {
+    var calcs = { g8: calcG8, cfs: calcCFS, iadl: calcIADL };
+    var result = calcs[id]();
+    valEl.textContent = result.text;
+    judgeEl.textContent = '判定: ' + result.judge;
+    judgeEl.className = 'score-judge ' + judgeCls(result.judge);
+  } catch(e) {
+    valEl.textContent = 'エラー: 全項目を入力してください';
+    judgeEl.textContent = '';
+  }
+}
+
+function gv(k) { return parseFloat(getVal(k, 0)); }
+
+function calcG8() {
+  // 看護師入力分: C, E, H, F(自動), age(自動)
+  var t = gv('g8_c') + gv('g8_e') + gv('g8_h') + gv('g8_f') + gv('g8_age');
+  nurseData._g8_nurse_score = t;
+  return { text: 'G8（看護師分）: ' + t + ' / 8', judge: t <= 5 ? '要確認' : '正常範囲' };
+}
+
+function calcCFS() {
+  var s = parseInt(getVal('cfs_score', 0));
+  nurseData._cfs_val = s;
+  var j = '非フレイル';
+  if (s >= 7) j = '重度フレイル';
+  else if (s >= 5) j = 'フレイル';
+  else if (s === 4) j = 'プレフレイル';
+  nurseData._cfs_judge = j;
+  return { text: 'CFS: ' + s + ' / 9', judge: j };
+}
+
+function calcIADL() {
+  var t = 0;
+  for (var i = 0; i < 8; i++) {
+    t += parseFloat(getVal('iadl_' + i, 0));
+  }
+  nurseData._iadl_score = t;
+  var j = '自立';
+  if (t <= 4) j = '重度低下';
+  else if (t <= 6) j = '中等度低下';
+  else if (t <= 7) j = '軽度低下';
+  nurseData._iadl_judge = j;
+  return { text: 'Lawton IADL: ' + t + ' / 8', judge: j };
+}
+
+function recalcAll() {
+  // 処方薬数 → g8_h 自動判定
+  var dc = getVal('g8_drug_count');
+  if (dc !== '') {
+    nurseData.g8_h = parseInt(dc) >= 4 ? 0 : 1;
+  }
+  try { calcG8(); } catch(e) {}
+  try { calcCFS(); } catch(e) {}
+  try { calcIADL(); } catch(e) {}
+  // 握力・歩行速度の自動判定
+  autoJudgeFriedSilent();
+}
+
+// =========================================================================
+// 補助機能
+// =========================================================================
+function tryLoadPatient() {
+  saveCurrentStep();
+  var pid = getVal('patient_id');
+  if (!pid) { alert('患者IDを入力してください'); return; }
+  var found = loadPatientData(pid);
+  var el = document.getElementById('loadResult');
+  if (found) {
+    el.innerHTML = '<span style="color:#27ae60; font-weight:600;">患者データを読み込みました</span>';
+    document.getElementById('topPatientId').textContent = 'ID: ' + pid;
+    // 患者データから基本情報を流用
+    if (patientData.patient_name && !nurseData.patient_name) nurseData.patient_name = patientData.patient_name;
+    if (patientData.patient_age && !nurseData.patient_age) nurseData.patient_age = patientData.patient_age;
+    if (patientData.patient_sex && !nurseData.patient_sex) nurseData.patient_sex = patientData.patient_sex;
+    renderStep();
+  } else {
+    el.innerHTML = '<span style="color:#e74c3c;">患者データが見つかりません（患者用アンケートが未回答です）</span>';
+  }
+}
+
+function calcWeightAndBMI() {
+  saveCurrentStep();
+  var h = parseFloat(getVal('patient_height', 0)) / 100;
+  var wNow = parseFloat(getVal('patient_weight', 0));
+  var w3m = parseFloat(getVal('weight_3m', 0));
+  var w6m = parseFloat(getVal('weight_6m', 0));
+  var w1y = parseFloat(getVal('weight_1y', 0));
+
+  var msgs = [];
+  var filled = [];
+
+  // BMI
+  if (h > 0 && wNow > 0) {
+    var bmi = wNow / (h * h);
+    var bmiStr = bmi.toFixed(1);
+    nurseData.patient_bmi = bmiStr;
+    msgs.push('BMI = ' + bmiStr + ' kg/m\u00B2');
+
+    // G8 F項 (BMI区分) を自動設定
+    var g8f;
+    if (bmi < 19) g8f = 0;
+    else if (bmi < 21) g8f = 1;
+    else if (bmi < 23) g8f = 2;
+    else g8f = 3;
+    nurseData.g8_f = g8f;
+    var g8fLabels = {0:'19未満', 1:'19-21', 2:'21-23', 3:'23以上'};
+    filled.push('G8 F項(BMI) \u2192 ' + g8fLabels[g8f] + '（' + bmiStr + '）');
+  }
+
+  // 3ヶ月間の体重変化
+  if (wNow > 0 && w3m > 0) {
+    var diff3m = w3m - wNow;
+    msgs.push('3ヶ月間の変化: ' + (diff3m > 0 ? '-' : '+') + Math.abs(diff3m).toFixed(1) + 'kg');
+  }
+
+  // 半年間の体重変化
+  if (wNow > 0 && w6m > 0) {
+    var diff6m = w6m - wNow;
+    msgs.push('半年間の変化: ' + (diff6m > 0 ? '-' : '+') + Math.abs(diff6m).toFixed(1) + 'kg');
+  }
+
+  // 1年間の体重変化
+  if (wNow > 0 && w1y > 0) {
+    var diff1y = w1y - wNow;
+    msgs.push('1年間の変化: ' + (diff1y > 0 ? '-' : '+') + Math.abs(diff1y).toFixed(1) + 'kg');
+  }
+
+  // 年齢による G8 年齢区分
+  var age = parseInt(getVal('patient_age', 0));
+  if (age > 0) {
+    var g8age;
+    if (age >= 86) g8age = 0;
+    else if (age >= 80) g8age = 1;
+    else g8age = 2;
+    nurseData.g8_age = g8age;
+  }
+
+  var calcEl = document.getElementById('weightCalcResult');
+  if (calcEl) {
+    calcEl.innerHTML = msgs.length
+      ? '<strong>計算結果:</strong><br>' + msgs.map(function(m) { return '\u30FB' + m; }).join('<br>')
+      : '<span style="color:#e74c3c;">身長・体重を入力してください</span>';
+  }
+  var fillEl = document.getElementById('autoFillResult');
+  if (fillEl) {
+    fillEl.innerHTML = filled.length
+      ? '<strong style="color:#27ae60;">自動反映済み:</strong><br>' + filled.map(function(f) { return '\u2713 ' + f; }).join('<br>')
+      : '';
+  }
+
+  // BMI表示更新
+  var bmiDisp = document.getElementById('bmiDisplay');
+  if (bmiDisp && nurseData.patient_bmi) bmiDisp.textContent = nurseData.patient_bmi;
+}
+
+function autoJudgeFried() {
+  saveCurrentStep();
+  var msgs = [];
+
+  // 握力
+  var sex = getVal('patient_sex');
+  var gripR = parseFloat(getVal('fried_grip_r', 0));
+  var gripL = parseFloat(getVal('fried_grip_l', 0));
+  var gripMax = Math.max(gripR, gripL);
+  if (gripMax > 0 && sex) {
+    var th = sex === 'M' ? 28 : 18;
+    var result = gripMax < th ? 1 : 0;
+    nurseData.fried_grip = result;
+    msgs.push('握力: 最大' + gripMax + 'kg（基準' + th + 'kg）\u2192 ' + (result ? '該当' : '非該当'));
+  }
+
+  // 歩行速度
+  var speed = parseFloat(getVal('fried_walk_speed', 0));
+  if (speed > 0) {
+    var walkResult = speed < 1.0 ? 1 : 0;
+    nurseData.fried_walk = walkResult;
+    msgs.push('歩行速度: ' + speed + ' m/秒（基準1.0）\u2192 ' + (walkResult ? '該当' : '非該当'));
+  }
+
+  var el = document.getElementById('friedAutoResult');
+  if (el) {
+    el.innerHTML = msgs.length
+      ? '<strong style="color:#27ae60;">自動判定結果:</strong><br>' + msgs.map(function(m) { return '\u2713 ' + m; }).join('<br>')
+      : '<span style="color:#e74c3c;">性別・握力・歩行速度を入力してください</span>';
+  }
+
+  renderStep();
+}
+
+function autoJudgeFriedSilent() {
+  var sex = getVal('patient_sex');
+  var gripR = parseFloat(getVal('fried_grip_r', 0));
+  var gripL = parseFloat(getVal('fried_grip_l', 0));
+  var gripMax = Math.max(gripR, gripL);
+  if (gripMax > 0 && sex) {
+    var th = sex === 'M' ? 28 : 18;
+    nurseData.fried_grip = gripMax < th ? 1 : 0;
+  }
+  var speed = parseFloat(getVal('fried_walk_speed', 0));
+  if (speed > 0) {
+    nurseData.fried_walk = speed < 1.0 ? 1 : 0;
+  }
+}
+
+// =========================================================================
+// localStorage保存
+// =========================================================================
+function saveToLocalStorage() {
+  saveCurrentStep();
+  recalcAll();
+
+  var pid = getVal('patient_id');
+  if (!pid) { alert('患者IDを入力してください'); return; }
+
+  var data = {
+    patient_id: pid,
+    input_type: 'nurse',
+    input_timestamp: new Date().toISOString(),
+    patient_name: getVal('patient_name'),
+    patient_age: getVal('patient_age'),
+    patient_sex: getVal('patient_sex'),
+    patient_height: getVal('patient_height'),
+    patient_weight: getVal('patient_weight'),
+    patient_bmi: getVal('patient_bmi'),
+    weight_3m: getVal('weight_3m'),
+    weight_6m: getVal('weight_6m'),
+    weight_1y: getVal('weight_1y'),
+    assessment_date: getVal('assessment_date'),
+    cga_social: getVal('cga_social'),
+    g8_c: getVal('g8_c'),
+    g8_e: getVal('g8_e'),
+    g8_h: getVal('g8_h'),
+    g8_drug_count: getVal('g8_drug_count'),
+    g8_f: getVal('g8_f'),
+    g8_age: getVal('g8_age'),
+    cfs_score: getVal('cfs_score'),
+    fried_grip_r: getVal('fried_grip_r'),
+    fried_grip_l: getVal('fried_grip_l'),
+    fried_grip: nurseData.fried_grip !== undefined ? String(nurseData.fried_grip) : '',
+    fried_walk_speed: getVal('fried_walk_speed'),
+    fried_walk: nurseData.fried_walk !== undefined ? String(nurseData.fried_walk) : '',
+    glim_calf: getVal('glim_calf'),
+    minicog_recall: getVal('minicog_recall'),
+    minicog_clock: getVal('minicog_clock'),
+    _minicog_score: nurseData._minicog_score,
+    _minicog_judge: nurseData._minicog_judge || '',
+    iadl_0: getVal('iadl_0'),
+    iadl_1: getVal('iadl_1'),
+    iadl_2: getVal('iadl_2'),
+    iadl_3: getVal('iadl_3'),
+    iadl_4: getVal('iadl_4'),
+    iadl_5: getVal('iadl_5'),
+    iadl_6: getVal('iadl_6'),
+    iadl_7: getVal('iadl_7'),
+    _iadl_score: nurseData._iadl_score,
+    _iadl_judge: nurseData._iadl_judge || '',
+  };
+
+  var key = 'assessment_nurse_' + pid;
+  localStorage.setItem(key, JSON.stringify(data));
+
+  var el = document.getElementById('saveResult');
+  if (el) {
+    el.innerHTML = '<span style="color:#27ae60; font-weight:700; font-size:16px;">保存完了しました</span>' +
+      '<br><span style="font-size:12px; color:var(--text-light);">キー: ' + key + ' / 保存時刻: ' + new Date().toLocaleString('ja-JP') + '</span>';
+  }
+}
+
+// =========================================================================
+// 初期化
+// =========================================================================
+buildSidebar();
+renderStep();
+</script>
+</body>
+</html>

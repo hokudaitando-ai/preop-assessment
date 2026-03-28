@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+<title>術前全身状態評価システム</title>
+<style>
+:root {
+  --primary: #2c3e50;
+  --accent: #3498db;
+  --success: #27ae60;
+  --nurse: #1a5276;
+  --bg: #f0f4f8;
+  --card: #ffffff;
+  --text: #2c3e50;
+  --text-light: #7f8c8d;
+  --radius: 16px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  -webkit-tap-highlight-color: transparent;
+}
+.header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+.header h1 {
+  font-size: 1.6rem;
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+.header p {
+  font-size: 0.95rem;
+  color: var(--text-light);
+}
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  max-width: 400px;
+}
+.card-link {
+  display: block;
+  text-decoration: none;
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 28px 24px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  transition: transform 0.15s, box-shadow 0.15s;
+  border-left: 6px solid transparent;
+}
+.card-link:active {
+  transform: scale(0.97);
+}
+.card-link.patient { border-left-color: var(--accent); }
+.card-link.nurse   { border-left-color: var(--nurse); }
+.card-link.staff   { border-left-color: var(--primary); }
+.card-link .icon {
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+.card-link .title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.card-link .desc {
+  font-size: 0.85rem;
+  color: var(--text-light);
+  line-height: 1.5;
+}
+.footer {
+  margin-top: 40px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--text-light);
+}
+.install-banner {
+  display: none;
+  background: var(--accent);
+  color: #fff;
+  padding: 14px 20px;
+  border-radius: var(--radius);
+  margin-bottom: 24px;
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(52,152,219,0.3);
+}
+.install-banner:active { opacity: 0.9; }
+.offline-badge {
+  display: inline-block;
+  background: var(--success);
+  color: #fff;
+  font-size: 0.75rem;
+  padding: 3px 10px;
+  border-radius: 20px;
+  margin-top: 8px;
+}
+</style>
+</head>
+<body>
+
+<div class="install-banner" id="installBanner" onclick="installApp()">
+  ホーム画面に追加してアプリとして使う
+</div>
+
+<div class="header">
+  <h1>術前全身状態評価システム</h1>
+  <p>高齢外科患者の術前評価ツール</p>
+  <div class="offline-badge" id="offlineBadge" style="display:none;">オフライン対応済み</div>
+</div>
+
+<div class="cards">
+  <a href="patient.html" class="card-link patient">
+    <div class="icon">📋</div>
+    <div class="title">患者様用アンケート</div>
+    <div class="desc">患者様ご自身に回答いただくページです。<br>タブレットで大きな文字で表示されます。</div>
+  </a>
+
+  <a href="nurse.html" class="card-link nurse">
+    <div class="icon">🩺</div>
+    <div class="title">看護師用 計測・評価</div>
+    <div class="desc">身体計測、CFS、J-CHS、Mini-Cog、<br>Lawton IADLの確認を行います。</div>
+  </a>
+
+  <a href="staff.html" class="card-link staff">
+    <div class="icon">👨‍⚕️</div>
+    <div class="title">医師用 総合評価</div>
+    <div class="desc">全データを統合し、G8・mFI-5・GLIM・<br>E-PASS等の評価とCSV出力を行います。</div>
+  </a>
+</div>
+
+<div class="footer">
+  <p>データはこの端末のブラウザ内に保存されます</p>
+  <p>患者IDで各ページのデータが紐付けられます</p>
+</div>
+
+<script>
+// Service Worker登録
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').then(reg => {
+    console.log('SW registered:', reg.scope);
+    // SW がアクティブならオフラインバッジ表示
+    if (reg.active) document.getElementById('offlineBadge').style.display = 'inline-block';
+    reg.addEventListener('updatefound', () => {
+      const newSW = reg.installing;
+      newSW.addEventListener('statechange', () => {
+        if (newSW.state === 'activated') {
+          document.getElementById('offlineBadge').style.display = 'inline-block';
+        }
+      });
+    });
+  }).catch(err => console.log('SW registration failed:', err));
+}
+
+// PWA インストールプロンプト
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('installBanner').style.display = 'block';
+});
+
+function installApp() {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(result => {
+    deferredPrompt = null;
+    document.getElementById('installBanner').style.display = 'none';
+  });
+}
+
+window.addEventListener('appinstalled', () => {
+  document.getElementById('installBanner').style.display = 'none';
+});
+</script>
+</body>
+</html>

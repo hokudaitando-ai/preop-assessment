@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#2980b9">
+<link rel="manifest" href="manifest.json">
+<title>術前アンケート（患者様用）</title>
+<style>
+:root {
+  --primary: #2980b9;
+  --primary-light: #ebf5fb;
+  --success: #27ae60;
+  --warning: #f39c12;
+  --danger: #e74c3c;
+  --bg: #f0f4f8;
+  --card: #ffffff;
+  --text: #2c3e50;
+  --text-light: #7f8c8d;
+  --border: #dce1e6;
+  --radius: 12px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+  min-height: 100vh;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+/* ヘッダー */
+.header {
+  background: var(--primary);
+  color: #fff;
+  padding: 18px 24px;
+  text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.header h1 { font-size: 20px; font-weight: 700; }
+.header .sub { font-size: 13px; opacity: 0.85; margin-top: 4px; }
+
+/* プログレスバー */
+.progress-bar {
+  background: #ddd;
+  height: 8px;
+  width: 100%;
+}
+.progress-bar .fill {
+  background: var(--success);
+  height: 100%;
+  transition: width 0.4s ease;
+}
+
+/* コンテナ */
+.container {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 20px 16px 100px;
+}
+
+/* セクション（各ステップ） */
+.step { display: none; }
+.step.active { display: block; }
+
+/* カード */
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+
+.card-desc {
+  font-size: 14px;
+  color: var(--text-light);
+  margin-bottom: 16px;
+}
+
+/* 質問 */
+.question {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin-bottom: 14px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.question-label {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+/* ラジオボタン */
+.radio-group { display: flex; flex-direction: column; gap: 8px; }
+.radio-option {
+  display: flex;
+  align-items: center;
+  background: var(--primary-light);
+  border: 2px solid transparent;
+  border-radius: 10px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 15px;
+}
+.radio-option:hover { border-color: var(--primary); }
+.radio-option.selected {
+  border-color: var(--primary);
+  background: #d4e6f6;
+}
+.radio-option input[type="radio"] {
+  width: 20px;
+  height: 20px;
+  margin-right: 12px;
+  flex-shrink: 0;
+  accent-color: var(--primary);
+}
+
+/* テキスト入力 */
+.input-field {
+  width: 100%;
+  padding: 14px 16px;
+  font-size: 18px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.input-field:focus { border-color: var(--primary); }
+
+/* ボタン */
+.btn-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+  justify-content: space-between;
+}
+.btn {
+  flex: 1;
+  padding: 16px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: #2471a3; }
+.btn-secondary { background: #bdc3c7; color: #fff; }
+.btn-secondary:hover { background: #95a5a6; }
+.btn-success { background: var(--success); color: #fff; }
+.btn-success:hover { background: #229954; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* 完了画面 */
+.complete-icon { font-size: 64px; text-align: center; margin: 20px 0; }
+.complete-msg {
+  text-align: center;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--success);
+  margin-bottom: 12px;
+}
+
+/* 固定ナビ */
+.nav-fixed {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border-top: 1px solid var(--border);
+  padding: 12px 16px;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  z-index: 100;
+  max-width: 680px;
+  margin: 0 auto;
+}
+.nav-fixed .btn { max-width: 200px; }
+
+/* ステップインジケーター */
+.step-indicator {
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-light);
+  margin-bottom: 16px;
+}
+
+/* タッチ操作最適化 */
+input, select, textarea, button { font-size: 16px; }
+
+/* === タブレット・モバイル最適化 === */
+@media (min-width: 481px) and (max-width: 1024px) {
+  .container { max-width: 720px; padding: 24px 24px 120px; }
+  .radio-option { padding: 16px 18px; font-size: 16px; min-height: 52px; }
+  .radio-option input[type="radio"] { width: 22px; height: 22px; }
+  .question-label { font-size: 17px; }
+  .card-title { font-size: 20px; }
+  .card-desc { font-size: 15px; }
+  .input-field { font-size: 18px; padding: 14px 16px; }
+  .btn { padding: 18px 28px; font-size: 17px; min-height: 54px; }
+  .header h1 { font-size: 22px; }
+  .step-indicator { font-size: 15px; }
+}
+@media (max-width: 480px) {
+  .header h1 { font-size: 17px; }
+  .question-label { font-size: 15px; }
+  .radio-option { font-size: 14px; padding: 12px 14px; }
+  .container { padding: 16px 12px 100px; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>術前アンケート（患者様用）</h1>
+  <div class="sub">以下の質問にお答えください。回答は外来診療に役立てます。</div>
+</div>
+<div class="progress-bar"><div class="fill" id="progressFill" style="width: 0%"></div></div>
+
+<div class="container" id="app">
+
+  <!-- Step 0: 患者ID入力 -->
+  <div class="step active" data-step="0">
+    <div class="card">
+      <div class="card-title">はじめに</div>
+      <div class="card-desc">受付で配布された患者IDを入力してください。</div>
+      <div class="question">
+        <div class="question-label">患者ID</div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span style="font-size:22px; font-weight:700; color:var(--primary);">10</span>
+          <input type="text" class="input-field" id="patientId" placeholder="例: 12345" style="flex:1;">
+        </div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <div></div>
+      <button class="btn btn-primary" onclick="nextStep()">次へ進む</button>
+    </div>
+  </div>
+
+  <!-- Step 1: 研究同意 -->
+  <div class="step" data-step="1">
+    <div class="card">
+      <div class="card-title">研究参加への同意</div>
+      <div class="card-desc" style="font-size:15px; line-height:1.8; color:var(--text);">
+        このアンケートは、高齢者の手術前の全身状態を評価するための研究の一環として行われます。<br><br>
+        ご回答いただいた内容は、個人が特定できない形で研究目的のみに使用されます。研究結果は、今後の高齢者医療の質の向上に役立てることを目的としています。<br><br>
+        ご協力は任意であり、回答の途中でやめることもできます。また、回答しないことによって診療上の不利益が生じることはありません。<br><br>
+        本研究の趣旨をご理解いただき、同意いただける場合は以下にチェックを入れて「次へ進む」を押してください。
+      </div>
+    </div>
+    <div class="question">
+      <label style="display:flex; align-items:center; gap:12px; cursor:pointer; font-size:16px; font-weight:600; padding:8px 0;">
+        <input type="checkbox" id="consentCheck" style="width:24px; height:24px; accent-color:var(--primary);">
+        上記の説明を読み、研究への参加に同意します
+      </label>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="prevStep()">戻る</button>
+      <button class="btn btn-primary" onclick="nextStep()">次へ進む</button>
+    </div>
+  </div>
+
+  <!-- Step 2: 体重について -->
+  <div class="step" data-step="2">
+    <div class="step-indicator">質問 1 / 6</div>
+    <div class="card">
+      <div class="card-title">体重について</div>
+      <div class="card-desc">現在の体重と、過去の体重をわかる範囲でお答えください。</div>
+    </div>
+
+    <div class="question">
+      <div class="question-label">現在の体重（kg）</div>
+      <input type="number" class="input-field" id="weight_now" placeholder="例: 65.0" step="0.1" style="width:200px;">
+    </div>
+
+    <div class="question">
+      <div class="question-label">3ヶ月前の体重（kg）</div>
+      <div style="font-size:13px; color:var(--text-light); margin-bottom:8px;">わからない場合は空欄のままで構いません</div>
+      <input type="number" class="input-field" id="weight_3m" placeholder="例: 67.0" step="0.1" style="width:200px;">
+    </div>
+
+    <div class="question">
+      <div class="question-label">6ヶ月前の体重（kg）</div>
+      <div style="font-size:13px; color:var(--text-light); margin-bottom:8px;">わからない場合は空欄のままで構いません</div>
+      <input type="number" class="input-field" id="weight_6m" placeholder="例: 68.0" step="0.1" style="width:200px;">
+    </div>
+
+    <div class="question">
+      <div class="question-label">1年前の体重（kg）</div>
+      <div style="font-size:13px; color:var(--text-light); margin-bottom:8px;">わからない場合は空欄のままで構いません</div>
+      <input type="number" class="input-field" id="weight_1y" placeholder="例: 70.0" step="0.1" style="width:200px;">
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="prevStep()">戻る</button>
+      <button class="btn btn-primary" onclick="nextStep()">次へ進む</button>
+    </div>
+  </div>
+
+  <!-- Step 3: G8 患者自己申告分 -->
+  <div class="step" data-step="3">
+    <div class="step-indicator">質問 2 / 6</div>
+    <div class="card">
+      <div class="card-title">食事と体の変化について</div>
+      <div class="card-desc">最近3ヶ月間の変化について教えてください。</div>
+    </div>
+
+    <div class="question">
+      <div class="question-label">最近3ヶ月で、食事の量は変わりましたか？</div>
+      <div class="radio-group" data-key="g8_a">
+        <label class="radio-option"><input type="radio" name="g8_a" value="0">かなり減った</label>
+        <label class="radio-option"><input type="radio" name="g8_a" value="1">少し減った</label>
+        <label class="radio-option"><input type="radio" name="g8_a" value="2">変わらない</label>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-label">最近3ヶ月で、意図せず体重が減りましたか？</div>
+      <div class="radio-group" data-key="g8_b">
+        <label class="radio-option"><input type="radio" name="g8_b" value="0">3kg以上減った</label>
+        <label class="radio-option"><input type="radio" name="g8_b" value="1">わからない</label>
+        <label class="radio-option"><input type="radio" name="g8_b" value="2">1〜3kg減った</label>
+        <label class="radio-option"><input type="radio" name="g8_b" value="3">減っていない</label>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-label">同じ年齢の方と比べて、ご自身の健康状態をどう感じますか？</div>
+      <div class="radio-group" data-key="g8_p">
+        <label class="radio-option"><input type="radio" name="g8_p" value="0">良くない</label>
+        <label class="radio-option"><input type="radio" name="g8_p" value="0.5">わからない</label>
+        <label class="radio-option"><input type="radio" name="g8_p" value="1">同じくらい</label>
+        <label class="radio-option"><input type="radio" name="g8_p" value="2">良い方だと思う</label>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="prevStep()">戻る</button>
+      <button class="btn btn-primary" onclick="nextStep()">次へ進む</button>
+    </div>
+  </div>
+
+  <!-- Step 4: 体調について（改訂J-CHS自己申告 + MNA-SF D） -->
+  <div class="step" data-step="4">
+    <div class="step-indicator">質問 3 / 6</div>
+    <div class="card">
+      <div class="card-title">体調について</div>
+      <div class="card-desc">最近の体調や活動の様子について教えてください。</div>
+    </div>
+
+    <div class="question">
+      <div class="question-label">最近3ヶ月で、強いストレスを感じたり、急に体調を崩したりしましたか？</div>
+      <div class="radio-group" data-key="mnasf_d">
+        <label class="radio-option"><input type="radio" name="mnasf_d" value="0">はい</label>
+        <label class="radio-option"><input type="radio" name="mnasf_d" value="2">いいえ</label>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-label">最近2週間で、わけもなく疲れたような感じがしましたか？</div>
+      <div class="radio-group" data-key="fried_exhaust">
+        <label class="radio-option"><input type="radio" name="fried_exhaust" value="0">いいえ</label>
+        <label class="radio-option"><input type="radio" name="fried_exhaust" value="1">はい</label>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-label">軽い運動・体操をしていますか？</div>
+      <div class="radio-group" data-key="fried_activity_q1">
+        <label class="radio-option"><input type="radio" name="fried_activity_q1" value="0">週に1回以上している</label>
+        <label class="radio-option"><input type="radio" name="fried_activity_q1" value="1">週に1回もしていない</label>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-label">定期的な運動・スポーツをしていますか？</div>
+      <div class="radio-group" data-key="fried_activity_q2">
+        <label class="radio-option"><input type="radio" name="fried_activity_q2" value="0">週に1回以上している</label>
+        <label class="radio-option"><input type="radio" name="fried_activity_q2" value="1">週に1回もしていない</label>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="prevStep()">戻る</button>
+      <button class="btn btn-primary" onclick="nextStep()">次へ進む</button>
+    </div>
+  </div>
+
+  <!-- Step 5: Lawton IADL -->
+  <div class="step" data-step="5">
+    <div class="step-indicator">質問 4 / 6</div>
+    <div class="card">
+      <div class="card-title">日常生活の動作について</div>
+      <div class="card-desc">それぞれの質問で、最もあてはまるものを1つ選んでください。</div>
+    </div>
+
+    <div class="question">
+      <div class="question-label">A. 電話を使うこと</div>
+      <div class="radio-group" data-key="iadl_0">
+        <label class="radio-option"><input type="radio" name="iadl_0" value="1">自分で番号を調べて電話をかけることが出来る</label>
+        <label class="radio-option"><input type="radio" name="iadl_0" value="1a">2, 3のよく知っている番号であればかけることが出来る</label>
+        <label class="radio-option"><input type="radio" name="iadl_0" value="1b">電話には出られるが自分からかけることは出来ない</label>
+        <label class="radio-option"><input type="radio" name="iadl_0" value="0">全く電話を使用出来ない</label>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-label">B. 買い物</div>
+      <div class="radio-group" data-key="iadl_1">
+        <label class="radio-option"><input type="radio" name="iadl_1" value="1">すべての買い物を自分で行うことが出来る</label>
+        <label class="radio-option"><input type="radio" name="iadl_1" value="0">少額の買い物は自分で行うことが出来る</label>
+        <label class="radio-option"><input type="radio" name="iadl_1" value="0a">誰かが一緒でないと買い物が出来ない</label>
+        <label class="radio-option"><input type="radio" name="iadl_1" value="0b">全く買い物は出来ない</label>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-label">C. 食事の支度</div>
+      <div class="radio-group" data-key="iadl_2">
+        <label class="radio-option"><input type="radio" name="iadl_2" value="1">自分で考えてきちんと食事の支度をすることが出来る</label>
+        <label class="radio-option"><input type="radio" name="iadl_2" value="0">材料が用意されれば適切な食事の支度をすることが出来る</label>
+        <label class="radio-option"><input type="radio" name="iadl_2" value="0a">温めることは出来るが、きちんとした食事をいつも作ることは出来ない</label>
+        <label class="radio-option"><input type="radio" name="iadl_2" value="0b">食事の支度をしてもらう必要がある</label>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-label">D. 家事</div>
+      <div class="radio-group" data-key="iadl_3">
+        <label class="radio-option"><input type="radio" name="iadl_3" value="1">力仕事以外の家事を1人でこなすことが出来る</label>
+        <label class="radio-option"><input type="radio" name="iadl_3" value="1a">皿洗いやベッドの支度などの簡単な家事は出来る</label>
+        <label class="radio-option"><input type="radio" name="iadl_3" value="1b">簡単な家事はできるが、きちんと清潔さを保つことが出来ない</label>
+        <label class="radio-option"><input type="radio" name="iadl_3" value="1c">全ての家事に手助けを必要とする</label>
+        <label class="radio-option"><input type="radio" name="iadl_3" value="0">全く家事は出来ない</label>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-label">E. 洗濯</div>
+      <div class="radio-group" data-key="iadl_4">
+        <label class="radio-option"><input type="radio" name="iadl_4" value="1">自分の洗濯は全て自分で行うことが出来る</label>
+        <label class="radio-option"><input type="radio" name="iadl_4" value="1a">靴下などの小物の洗濯を行うことは出来る</label>
+        <label class="radio-option"><input type="radio" name="iadl_4" value="0">洗濯は他の人にしてもらう必要がある</label>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-label">F. 外出の方法</div>
+      <div class="radio-group" data-key="iadl_5">
+        <label class="radio-option"><input type="radio" name="iadl_5" value="1">1人で公共交通機関を利用し、あるいは自家用車で外出することが出来る</label>
+        <label class="radio-option"><input type="radio" name="iadl_5" value="1a">1人でタクシーは利用出来るが、その他の公共交通機関は利用出来ない</label>
+        <label class="radio-option"><input type="radio" name="iadl_5" value="1b">付き添いが一緒なら、公共交通機関を利用し外出することが出来る</label>
+        <label class="radio-option"><input type="radio" name="iadl_5" value="0">付き添いが一緒であれば、タクシーか自家用車で外出することが出来る</label>
+        <label class="radio-option"><input type="radio" name="iadl_5" value="0a">全く外出することが出来ない</label>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-label">G. お薬の管理</div>
+      <div class="radio-group" data-key="iadl_6">
+        <label class="radio-option"><input type="radio" name="iadl_6" value="1">自分で正しい時に正しい量の薬を飲むことが出来る</label>
+        <label class="radio-option"><input type="radio" name="iadl_6" value="0">前もって薬が仕分けされていれば、自分で飲むことが出来る</label>
+        <label class="radio-option"><input type="radio" name="iadl_6" value="0a">自分で薬を管理することが出来ない</label>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-label">H. お金の管理</div>
+      <div class="radio-group" data-key="iadl_7">
+        <label class="radio-option"><input type="radio" name="iadl_7" value="1">家計を自分で管理出来る（支払い計画・実施、銀行へ行くこと等）</label>
+        <label class="radio-option"><input type="radio" name="iadl_7" value="1a">日々の支払いは出来るが、預金の出し入れや大きな買い物等では手助けが必要</label>
+        <label class="radio-option"><input type="radio" name="iadl_7" value="0">お金の取り扱いを行うことが出来ない</label>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="prevStep()">戻る</button>
+      <button class="btn btn-primary" onclick="nextStep()">次へ進む</button>
+    </div>
+  </div>
+
+  <!-- Step 6: 確認・送信 -->
+  <div class="step" data-step="6">
+    <div class="step-indicator">質問 5 / 6</div>
+    <div class="card">
+      <div class="card-title">回答の確認</div>
+      <div class="card-desc">入力内容を確認して「回答を保存する」を押してください。</div>
+    </div>
+    <div id="confirmArea" class="card" style="background: #fafafa;"></div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="prevStep()">戻る</button>
+      <button class="btn btn-success" onclick="submitAll()">回答を保存する</button>
+    </div>
+  </div>
+
+  <!-- Step 7: 完了 -->
+  <div class="step" data-step="7">
+    <div class="card" style="text-align: center; padding: 40px;">
+      <div class="complete-icon">&#10004;&#65039;</div>
+      <div class="complete-msg">回答が保存されました</div>
+      <p style="font-size: 15px; color: var(--text-light); margin-top: 12px;">
+        ありがとうございました。<br>
+        この画面をスタッフにお見せいただくか、<br>そのままお待ちください。
+      </p>
+      <p style="margin-top: 24px; font-size: 13px; color: var(--text-light);">
+        患者ID: <strong id="completedId"></strong>
+      </p>
+      <div class="btn-row" style="justify-content: center; margin-top: 30px;">
+        <button class="btn btn-primary" style="max-width: 200px;" onclick="resetAll()">新しい患者を入力</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---- 状態管理 ----
+let currentStep = 0;
+const totalSteps = 7; // 0-6 が入力、7 が完了
+
+function getStepEl(n) {
+  return document.querySelector(`.step[data-step="${n}"]`);
+}
+
+function showStep(n) {
+  document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+  const el = getStepEl(n);
+  if (el) el.classList.add('active');
+  currentStep = n;
+  updateProgress();
+  window.scrollTo({top: 0, behavior: 'smooth'});
+
+  // 確認画面の場合
+  if (n === 6) buildConfirmation();
+}
+
+function updateProgress() {
+  const pct = Math.min(100, Math.round((currentStep / totalSteps) * 100));
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+
+function nextStep() {
+  // Step 0: ID必須チェック
+  if (currentStep === 0) {
+    const id = document.getElementById('patientId').value.trim();
+    if (!id) {
+      alert('患者IDを入力してください。');
+      return;
+    }
+  }
+  // Step 1: 同意チェック
+  if (currentStep === 1) {
+    const consent = document.getElementById('consentCheck');
+    if (!consent.checked) {
+      alert('研究参加への同意にチェックを入れてください。');
+      return;
+    }
+  }
+  showStep(currentStep + 1);
+}
+
+function prevStep() {
+  if (currentStep > 0) showStep(currentStep - 1);
+}
+
+// ---- データ収集 ----
+function collectData() {
+  const data = {};
+  const id = document.getElementById('patientId').value.trim();
+  data.patient_id = id;
+  data.input_type = 'patient';
+  data.input_timestamp = new Date().toISOString();
+  data.consent = document.getElementById('consentCheck').checked ? 1 : 0;
+
+  // 体重データを収集
+  const wNow = document.getElementById('weight_now').value.trim();
+  const w3m = document.getElementById('weight_3m').value.trim();
+  const w6m = document.getElementById('weight_6m').value.trim();
+  const w1y = document.getElementById('weight_1y').value.trim();
+  if (wNow) data.patient_weight = wNow;
+  if (w3m) data.weight_3m = w3m;
+  if (w6m) data.weight_6m = w6m;
+  if (w1y) data.weight_1y = w1y;
+
+  // ラジオボタンを収集
+  document.querySelectorAll('.radio-group').forEach(group => {
+    const key = group.dataset.key;
+    const checked = group.querySelector('input[type="radio"]:checked');
+    if (key && checked) {
+      data[key] = checked.value;
+    }
+  });
+
+  return data;
+}
+
+// ---- 確認画面生成 ----
+function buildConfirmation() {
+  const data = collectData();
+  const area = document.getElementById('confirmArea');
+  const labels = {
+    'g8_a': '食事量の変化',
+    'g8_b': '体重の変化',
+    'g8_p': '自己健康評価',
+    'mnasf_d': 'ストレス・体調変化',
+    'fried_exhaust': '疲労感',
+    'fried_activity_q1': '軽い運動・体操',
+    'fried_activity_q2': '定期的な運動・スポーツ',
+    'iadl_0': '電話',
+    'iadl_1': '買い物',
+    'iadl_2': '食事の準備',
+    'iadl_3': '家事',
+    'iadl_4': '洗濯',
+    'iadl_5': '移動手段',
+    'iadl_6': '服薬管理',
+    'iadl_7': '金銭管理',
+  };
+
+  let html = '<table style="width:100%; font-size:14px; border-collapse:collapse;">';
+  html += `<tr style="border-bottom:1px solid #ddd;"><td style="padding:8px; font-weight:600;">患者ID</td><td style="padding:8px;">10${data.patient_id}</td></tr>`;
+  html += `<tr style="border-bottom:1px solid #ddd;"><td style="padding:8px; font-weight:600;">研究同意</td><td style="padding:8px;">${data.consent ? '同意済み' : '<span style="color:#e74c3c;">未同意</span>'}</td></tr>`;
+
+  // 体重表示
+  const weightLabels = {'patient_weight':'現在の体重','weight_3m':'3ヶ月前の体重','weight_6m':'6ヶ月前の体重','weight_1y':'1年前の体重'};
+  for (const [wk, wl] of Object.entries(weightLabels)) {
+    const wv = data[wk];
+    html += `<tr style="border-bottom:1px solid #eee;"><td style="padding:6px 8px; color:#555;">${wl}</td><td style="padding:6px 8px;">${wv ? wv + ' kg' : '<span style="color:#aaa;">未入力</span>'}</td></tr>`;
+  }
+
+  let answeredCount = 0;
+  let totalCount = 0;
+  for (const [key, label] of Object.entries(labels)) {
+    totalCount++;
+    const val = data[key];
+    const display = val !== undefined ? '回答済み' : '<span style="color: #e74c3c;">未回答</span>';
+    if (val !== undefined) answeredCount++;
+    html += `<tr style="border-bottom:1px solid #eee;"><td style="padding:6px 8px; color:#555;">${label}</td><td style="padding:6px 8px;">${display}</td></tr>`;
+  }
+  html += '</table>';
+  html += `<p style="margin-top:12px; font-size:14px; color:var(--text-light);">回答数: ${answeredCount} / ${totalCount}</p>`;
+
+  area.innerHTML = html;
+}
+
+// ---- 保存 ----
+function submitAll() {
+  const data = collectData();
+  const key = 'assessment_patient_' + data.patient_id;
+  localStorage.setItem(key, JSON.stringify(data));
+  document.getElementById('completedId').textContent = '10' + data.patient_id;
+  showStep(7);
+}
+
+// ---- リセット ----
+function resetAll() {
+  // フォームリセット
+  document.querySelectorAll('input[type="radio"]').forEach(r => r.checked = false);
+  document.querySelectorAll('.radio-option').forEach(o => o.classList.remove('selected'));
+  document.getElementById('patientId').value = '';
+  document.getElementById('consentCheck').checked = false;
+  document.getElementById('weight_now').value = '';
+  document.getElementById('weight_3m').value = '';
+  document.getElementById('weight_6m').value = '';
+  document.getElementById('weight_1y').value = '';
+  showStep(0);
+}
+
+// ---- ラジオの選択スタイル ----
+document.addEventListener('change', function(e) {
+  if (e.target.type === 'radio') {
+    const group = e.target.closest('.radio-group');
+    if (group) {
+      group.querySelectorAll('.radio-option').forEach(o => o.classList.remove('selected'));
+      e.target.closest('.radio-option').classList.add('selected');
+    }
+  }
+});
+
+// 初期化
+updateProgress();
+</script>
+</body>
+</html>
