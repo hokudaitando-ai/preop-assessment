@@ -255,7 +255,7 @@ input, select, textarea, button { font-size: 16px; }
       </div>
     </div>
     <div class="btn-row">
-      <div></div>
+      <button class="btn btn-secondary" onclick="location.href='index.html'" style="font-size:14px;">&#9664; トップに戻る</button>
       <button class="btn btn-primary" onclick="nextStep()">次へ進む</button>
     </div>
   </div>
@@ -528,8 +528,9 @@ input, select, textarea, button { font-size: 16px; }
       <p style="margin-top: 24px; font-size: 13px; color: var(--text-light);">
         患者ID: <strong id="completedId"></strong>
       </p>
-      <div class="btn-row" style="justify-content: center; margin-top: 30px;">
+      <div class="btn-row" style="justify-content: center; margin-top: 30px; gap: 16px; flex-wrap: wrap;">
         <button class="btn btn-primary" style="max-width: 200px;" onclick="resetAll()">新しい患者を入力</button>
+        <button class="btn btn-secondary" style="max-width: 200px;" onclick="location.href='index.html'">&#9664; トップに戻る</button>
       </div>
     </div>
   </div>
