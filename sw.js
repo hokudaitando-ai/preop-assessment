@@ -1,11 +1,14 @@
-const CACHE_NAME = 'preop-assessment-v1';
+const CACHE_NAME = 'preop-assessment-v4';
 const ASSETS = [
   './',
   './index.html',
   './patient.html',
   './nurse.html',
   './staff.html',
-  './manifest.json'
+  './minicog.html',
+  './manifest.json',
+  'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js'
 ];
 
 // インストール: 全ファイルをキャッシュ
