@@ -2001,6 +2001,11 @@ function calcWeightAndBMI() {
 // PDF出力（サマリー画面をPDFとして保存）
 // =========================================================================
 function exportPDF() {
+  if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') {
+    alert('PDFライブラリを読み込めませんでした。\nインターネットに接続した状態でページを再読み込みしてください。');
+    return;
+  }
+
   saveCurrentStep();
   recalcAll();
 
@@ -2054,45 +2059,64 @@ function exportPDF() {
 
   setTimeout(() => {
     html2canvas(stepContent, {
-      scale: 2,
+      scale: 1.5,
       useCORS: true,
+      allowTaint: true,
       backgroundColor: '#ffffff',
       logging: false,
-    }).then(canvas => {
-      const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pageW = 210;
-      const pageH = 297;
-      const margin = 10;
-      const contentW = pageW - margin * 2;
-      const imgW = canvas.width;
-      const imgH = canvas.height;
-      const ratio = contentW / imgW;
-      const totalH = imgH * ratio;
-      const contentH = pageH - margin * 2;
+      windowWidth: 800,
+    }).then(function(canvas) {
+      try {
+        var jsPDF = window.jspdf.jsPDF;
+        var pdf = new jsPDF('p', 'mm', 'a4');
+        var pageW = 210;
+        var pageH = 297;
+        var margin = 10;
+        var contentW = pageW - margin * 2;
+        var contentH = pageH - margin * 2;
+        var imgW = canvas.width;
+        var imgH = canvas.height;
+        var ratio = contentW / imgW;
+        var sliceHPx = Math.floor(contentH / ratio);
 
-      let srcY = 0;
-      let page = 0;
-      while (srcY < imgH) {
-        if (page > 0) pdf.addPage();
-        const sliceH = Math.min(contentH / ratio, imgH - srcY);
-        const sliceCanvas = document.createElement('canvas');
-        sliceCanvas.width = imgW;
-        sliceCanvas.height = Math.ceil(sliceH);
-        const sCtx = sliceCanvas.getContext('2d');
-        sCtx.drawImage(canvas, 0, -srcY);
-        const sliceData = sliceCanvas.toDataURL('image/jpeg', 0.92);
-        pdf.addImage(sliceData, 'JPEG', margin, margin, contentW, sliceH * ratio);
-        srcY += sliceH;
-        page++;
+        var srcY = 0;
+        var page = 0;
+        while (srcY < imgH) {
+          if (page > 0) pdf.addPage();
+          var thisSliceH = Math.min(sliceHPx, imgH - srcY);
+          var sliceCanvas = document.createElement('canvas');
+          sliceCanvas.width = imgW;
+          sliceCanvas.height = thisSliceH;
+          var sCtx = sliceCanvas.getContext('2d');
+          sCtx.drawImage(canvas, 0, srcY, imgW, thisSliceH, 0, 0, imgW, thisSliceH);
+          var sliceData = sliceCanvas.toDataURL('image/jpeg', 0.85);
+          pdf.addImage(sliceData, 'JPEG', margin, margin, contentW, thisSliceH * ratio);
+          srcY += thisSliceH;
+          page++;
+        }
+
+        var filename = 'assessment_' + (pid || 'unknown') + '_' + dt.replace(/-/g, '') + '.pdf';
+        var pdfBlob = pdf.output('blob');
+        var url = URL.createObjectURL(pdfBlob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(function() {
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }, 1000);
+        cleanup();
+      } catch(e) {
+        console.error('PDF生成エラー:', e);
+        alert('PDF生成に失敗しました:\n' + e.message);
+        cleanup();
       }
-
-      const filename = `assessment_${pid || 'unknown'}_${dt.replace(/-/g, '')}.pdf`;
-      pdf.save(filename);
-      cleanup();
-    }).catch(err => {
-      console.error('PDF生成エラー:', err);
-      alert('PDF生成に失敗しました。もう一度お試しください。');
+    }).catch(function(err) {
+      console.error('画面キャプチャエラー:', err);
+      alert('PDF生成に失敗しました。\nもう一度お試しください。');
       cleanup();
     });
   }, 300);

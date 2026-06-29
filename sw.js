@@ -1,4 +1,4 @@
-const CACHE_NAME = 'preop-assessment-v4';
+const CACHE_NAME = 'preop-assessment-v5';
 const ASSETS = [
   './',
   './index.html',
